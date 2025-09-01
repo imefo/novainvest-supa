@@ -32,7 +32,7 @@ export default function AdminPage(){
         <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
           <Link className="btn" href="/admin/plans">مدیریت پلن‌ها</Link>
           <Link className="btn" href="/plans">مشاهده پلن‌ها</Link>
-          <Link className="btn" href="/dashboard">رفتن به داشبورد کاربر</Link>
+          <Link className="btn" href="/dashboard">داشبورد کاربر</Link>
         </div>
       </div>
     </main>
