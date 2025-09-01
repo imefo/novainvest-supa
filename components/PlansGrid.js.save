@@ -1,0 +1,136 @@
+'use client'
+import { useEffect, useMemo, useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
+
+export default function PlansGrid({ limit = 6, showTitle = true }){
+  const [plans, setPlans]     = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState('')
+
+  const fmt = useMemo(() => new Intl.NumberFormat('fa-IR'), [])
+
+  // fetch plans
+  useEffect(() => {
+    let mounted = true
+    ;(async ()=>{
+      setError('')
+      setLoading(true)
+      const query = supabase
+        .from('plans')
+        .select('id,name,description,min_invest,profit_percent,duration_months,is_active,created_at')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+
+      const { data, error } = await (limit ? query.limit(limit) : query)
+
+      if (!mounted) return
+      if (error) {
+        setError(error.message || 'خطا در بارگذاری پلن‌ها')
+        setPlans([])
+      } else {
+        setPlans(data || [])
+      }
+      setLoading(false)
+    })()
+    return () => { mounted = false }
+  }, [limit])
+
+  // inject reveal CSS (once)
+  useEffect(() => {
+    if (document.getElementById('nv-reveal')) return
+    const s = document.createElement('style')
+    s.id = 'nv-reveal'
+    s.innerHTML = `
+      .rv{opacity:0; transform:translateY(14px); transition:opacity .5s ease, transform .5s ease}
+      .rv-in{opacity:1; transform:none}
+    `
+    document.head.appendChild(s)
+  }, [])
+
+  // IntersectionObserver for reveal
+  useEffect(() => {
+    const nodes = document.querySelectorAll('[data-reveal]')
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('rv-in')
+          io.unobserve(entry.target)
+        }
+      })
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 })
+    nodes.forEach(n => {
+      if (!n.classList.contains('rv')) n.classList.add('rv')
+      io.observe(n)
+    })
+    return () => io.disconnect()
+  }, [plans, loading])
+
+  return (
+    <section className="container" style={{marginTop:28, marginBottom:24}}>
+      {showTitle && (
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:10,marginBottom:10,flexWrap:'wrap'}}>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>پلن‌های فعال</h2>
+          <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+            پلن‌ها به‌صورت خودکار از دیتابیس بارگذاری می‌شوند
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="card" style={{borderColor:'rgba(255,0,0,.25)'}}>
+          <strong>خطا:</strong> {error}
+        </div>
+      )}
+
+      <div className="grid grid-3" style={{gap:12}}>
+        {loading && Array.from({length: limit || 6}).map((_,i)=> <PlanSkeleton key={`sk-${i}`} />)}
+
+        {!loading && plans.map((p, idx) => (
+          <article key={p.id} className="card rv" data-reveal style={{display:'flex', flexDirection:'column'}}>
+            <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}>
+              <h3 style={{margin:0, fontSize:18, fontWeight:800}}>{p.name}</h3>
+              <span className="pill">{Number(p.profit_percent||0)}% / ماه</span>
+            </header>
+
+            {p.description && (
+              <p className="muted" style={{whiteSpace:'pre-wrap', marginTop:6}}>
+                {p.description}
+              </p>
+            )}
+
+            <div className="grid grid-3" style={{gap:8, marginTop:10}}>
+              <div className="pill">حداقل: {fmt.format(Number(p.min_invest||0))} USDT</div>
+              <div className="pill">مدت: {Number(p.duration_months||0)} ماه</div>
+              <div className="pill">{p.is_active ? 'فعال' : 'غیرفعال'}</div>
+            </div>
+          </article>
+        ))}
+
+        {!loading && !error && plans.length === 0 && (
+          <div className="card rv" data-reveal>
+            <p className="muted" style={{margin:0}}>فعلاً پلنی فعال نیست.</p>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function PlanSkeleton(){
+  return (
+    <div className="card rv" data-reveal style={{height:160, display:'grid', gap:8}}>
+      <div style={sk(70)} />
+      <div style={sk(50)} />
+      <div style={{display:'flex', gap:8}}>
+        <div style={sk(80)} /><div style={sk(60)} /><div style={sk(50)} />
+      </div>
+      <div style={{display:'flex', gap:8}}>
+        <div style={sk(100)} /><div style={sk(80)} />
+      </div>
+    </div>
+  )
+}
+const sk = (w) => ({
+  height:10, width: typeof w==='number' ? `${w}%` : w, borderRadius:8,
+  background:'linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.02), rgba(255,255,255,.06))',
+  animation:'sh 1.2s infinite'
