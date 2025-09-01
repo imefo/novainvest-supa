@@ -82,13 +82,13 @@ export default function AdminPlans(){
               <option value="safe">امن</option>
               <option value="risky">پرریسک</option>
             </select>
-            <label>
+            <label style={{display:'flex', alignItems:'center', gap:8}}>
               <input type="checkbox" checked={form.is_active} onChange={e=>setForm({...form, is_active:e.target.checked})} />
               فعال باشد
             </label>
           </div>
           <textarea placeholder="توضیحات" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
-          <div style={{display:'flex', gap:8}}>
+          <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
             <button className="btn primary" type="submit" disabled={busy}>{busy?'در حال ذخیره…':'ذخیره پلن'}</button>
             <Link className="btn" href="/plans">مشاهده صفحه پلن‌ها</Link>
           </div>
@@ -98,16 +98,18 @@ export default function AdminPlans(){
         <div className="grid grid-3" style={{gap:10}}>
           {plans.map(p=>(
             <div className="card" key={p.id}>
-              <div style={{display:'flex', justifyContent:'space-between'}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <strong>{p.name}</strong>
-                <span className="pill">{p.profit_percent}% / ماه</span>
+                <span className="pill">{Number(p.profit_percent||0)}% / ماه</span>
               </div>
               <div className="grid grid-3" style={{gap:6, marginTop:6}}>
-                <span className="pill">حداقل: {p.min_invest} USDT</span>
-                <span className="pill">مدت: {p.duration_months} ماه</span>
+                <span className="pill">حداقل: {Number(p.min_invest||0)} USDT</span>
+                <span className="pill">مدت: {Number(p.duration_months||0)} ماه</span>
                 <span className="pill">{p.risk_level==='risky'?'پرریسک':'امن'}</span>
               </div>
-              <Link className="btn" href={`/plans/${encodeURIComponent(p.id)}`}>جزئیات</Link>
+              <div style={{marginTop:8}}>
+                <Link className="btn" href={`/plans/${encodeURIComponent(p.id)}`}>جزئیات</Link>
+              </div>
             </div>
           ))}
         </div>
