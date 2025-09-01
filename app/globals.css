@@ -1,177 +1,51 @@
-/* ====== پایه ====== */
-*,
-*::before,
-*::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-html[dir="rtl"] body { direction: rtl; }
-body {
-  margin: 0;
-  font-family: var(--font-vazir), system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+cat > app/globals.css <<'EOF'
+:root{
+  --bg:#0b0f1a;
+  --panel:#131a27;
+  --muted:#9fb0c3;
+  --text:#e6edf5;
+  --primary:#6aa1ff;
+  --accent:#ffd166;
+  --radius:14px;
 }
 
-/* ====== تم ====== */
-:root {
-  --bg: #0b0b12;
-  --surface: #0f0f18;
-  --card: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.12);
-
-  --text: #e9e9ef;
-  --muted: #a6a7b0;
-
-  --primary: #7c4dff; /* بنفش */
-  --primary-contrast: #0b0b12;
-  --accent-gold: #d4af37;
-
-  --pill-bg: rgba(255,255,255,0.08);
-
-  --shadow-1: 0 8px 24px rgba(0,0,0,.24);
-  --shadow-2: 0 12px 30px rgba(0,0,0,.28);
-
-  --radius-8: 10px;
-  --radius-12: 14px;
-
-  --container: 1120px;
-  --gap: 12px;
+*{box-sizing:border-box}
+html,body{height:100%}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:radial-gradient(1200px 800px at 85% -10%, rgba(84,179,255,.18), transparent 70%), 
+             radial-gradient(800px 600px at 0% 100%, rgba(255,209,102,.12), transparent 60%), 
+             var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  /* استک فونت محلی و سیستمی (بدون نیاز به اینترنت) */
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+               Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
-/* حالت طلایی (درصورت نیاز می‌تونی روی html کلاس theme-gold بذاری) */
-.theme-gold {
-  --primary: #d4af37;
-  --accent-gold: #e2c04d;
-}
-
-/* ====== لایه‌بندی ====== */
-.container {
-  width: 100%;
-  max-width: var(--container);
-  margin-inline: auto;
-  padding: 0 16px;
-}
-
-.grid { display: grid; gap: var(--gap); }
-.grid-2 { grid-template-columns: repeat(2, 1fr); }
-.grid-3 { grid-template-columns: repeat(3, 1fr); }
-.grid-4 { grid-template-columns: repeat(4, 1fr); }
-
-@media (max-width: 1020px){ .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 680px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
-
-/* ====== کارت / قرص / دکمه ====== */
-.card {
-  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-12);
-  padding: 14px;
-  box-shadow: var(--shadow-1);
-  backdrop-filter: blur(10px);
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--pill-bg);
-  border: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: var(--radius-8);
-  border: 1px solid var(--border);
-  background: #12121c;
-  color: var(--text);
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
-  will-change: transform;
-}
-.btn:hover { transform: translateY(-1px); border-color: rgba(255,255,255,.2); }
-.btn:active { transform: translateY(0); }
-
-.btn.primary {
-  background: linear-gradient(180deg, var(--primary), color-mix(in oklab, var(--primary) 85%, #000 15%));
-  color: var(--primary-contrast);
-  border: 1px solid color-mix(in oklab, var(--primary) 70%, #fff 30%);
-  box-shadow: 0 8px 20px color-mix(in oklab, var(--primary) 25%, transparent);
-}
-.btn.primary:hover {
-  filter: saturate(1.06) brightness(1.02);
-}
-
-/* ====== فرم ====== */
-input, select, textarea {
-  width: 100%;
-  background: rgba(10,10,18,.65);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-8);
-  padding: 10px 12px;
-  outline: none;
-  transition: border-color .15s ease, box-shadow .15s ease;
-}
-input::placeholder, textarea::placeholder { color: #9798a3; }
-input:focus, textarea:focus {
-  border-color: color-mix(in oklab, var(--primary) 60%, #fff 40%);
-  box-shadow: 0 0 0 4px rgba(124,77,255,.18);
-}
-
-/* ====== تایپوگرافی ====== */
-h1, h2, h3 { line-height: 1.2; color: var(--text); }
-.muted { color: var(--muted); }
-
-/* ====== هدر چسبان ====== */
-header[role="banner"] {
-  position: sticky; top: 0; z-index: 50;
-  background: rgba(11,11,18,.75);
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.card{
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--radius);
+  padding:20px;
+  box-shadow:0 10px 35px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.06);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border);
 }
-
-/* لینک‌های ناوبری */
-.nav-link {
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-8);
-  background: #0f0f18;
-  text-decoration: none;
-  color: var(--text);
+.button{
+  display:inline-block; padding:10px 14px; border-radius:10px;
+  background:linear-gradient(90deg, var(--primary), #3b7bff);
+  color:#fff; text-decoration:none; border:0; cursor:pointer; transition:.2s;
 }
-.nav-link:hover { border-color: rgba(255,255,255,.2); }
-
-/* ====== اسکرول‌بار ====== */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #0a0a12; }
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #2a2a3b, #222233);
-  border-radius: 999px;
-  border: 2px solid #0a0a12;
+.button.ghost{
+  background:transparent; color:var(--text);
+  border:1px solid rgba(255,255,255,.18);
 }
-::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #35354a, #2b2b3e); }
-
-/* ====== افکت‌ها ====== */
-a { color: inherit; }
-a:hover { color: color-mix(in oklab, var(--text) 90%, var(--primary) 10%); }
-
-@keyframes soft-pop {
-  0% { transform: translateY(4px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-.fade-in { animation: soft-pop .35s ease both; }
-
-/* کلاس‌های کمکی */
-.center { display: grid; place-items: center; }
-.hidden { display: none !important; }
+.button.small{padding:8px 12px; font-size:.9rem}
+.row{display:grid; gap:6px}
+.grid{display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr))}
+.list{display:grid; gap:14px}
+.error{color:#ff6b6b}
+EOF
