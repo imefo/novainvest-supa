@@ -1,53 +1,56 @@
-cat > app/plans/page.js <<'EOF'
 'use client'
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../lib/supabaseClient'
 
-export default function PlansPage(){
+export default function PlansPage() {
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  useEffect(()=>{
-    ;(async()=>{
-      const { data, error } = await supabase
-        .from('plans')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending:false })
-      setPlans(error ? [] : (data || []))
-      setLoading(false)
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const { data, error: e } = await supabase
+          .from('plans')
+          .select('id, title, description, min_invest, profit_percent, duration_months')
+          .order('id', { ascending: true })
+        if (e) throw e
+        if (mounted) setPlans(data || [])
+        setLoading(false)
+      } catch (e) {
+        setError('خطا در بارگذاری پلن‌ها')
+      }
     })()
-  },[])
+    return () => { mounted = false }
+  }, [])
+
+  if (loading) return <main className="container"><p>در حال بارگذاری…</p></main>
+  if (error)   return <main className="container"><p style={{color:'#f66'}}>{error}</p></main>
 
   return (
-    <main className="container" style={{marginTop:18}}>
-      <div className="card">
-        <h1 style={{margin:0}}>پلن‌ها</h1>
-      </div>
+    <main className="container" style={{padding:'24px', display:'grid', gap:16}}>
+      <h1 style={{fontSize:'22px'}}>پلن‌های سرمایه‌گذاری</h1>
 
-      {loading && <div className="card" style={{marginTop:12}}>در حال بارگذاری…</div>}
-
-      {!loading && (
-        <div className="grid grid-3" style={{gap:10, marginTop:12}}>
-          {plans.map(p=>(
-            <div className="card" key={p.id} style={{display:'grid', gap:8}}>
-              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <strong>{p.name}</strong>
-                <span className="pill">{Number(p.profit_percent||0)}% / ماه</span>
-              </div>
-              <div className="grid grid-3" style={{gap:6}}>
-                <span className="pill">حداقل: {Number(p.min_invest||0)} USDT</span>
-                <span className="pill">مدت: {Number(p.duration_months||0)} ماه</span>
-                <span className="pill">{(p.risk_level||'safe')==='risky'?'پرریسک':'امن'}</span>
-              </div>
-              <Link className="btn" href={`/plans/${encodeURIComponent(p.id)}`}>جزئیات</Link>
+      <div style={{display:'grid', gap:12}}>
+        {plans.map(p => (
+          <div key={p.id} className="card" style={{display:'grid', gap:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <strong>{p.title}</strong>
+              <Link href={`/plans/${p.id}`} className="btn tiny">جزئیات</Link>
             </div>
-          ))}
-          {plans.length===0 && <div className="card">فعلاً پلن فعالی نیست.</div>}
-        </div>
-      )}
+            {p.description ? <p style={{opacity:.85}}>{p.description}</p> : null}
+            <div style={{display:'flex', gap:16, opacity:.85, fontSize:14}}>
+              <span>حداقل: ${p.min_invest}</span>
+              <span>سود ماهانه: {p.profit_percent}%</span>
+              <span>مدت: {p.duration_months} ماه</span>
+            </div>
+          </div>
+        ))}
+        {plans.length === 0 && <p>پلنی موجود نیست.</p>}
+      </div>
     </main>
   )
 }
-EOF
