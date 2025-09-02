@@ -1,76 +1,214 @@
-/* app/globals.css */
-* { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; }
-body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+/* ===========================
+   app/globals.css  (Next.js App Router)
+   سبک سراسری، RTL-ready، با هدر چسبان
+   =========================== */
 
-.site-header{
-  position: sticky;   /* اگر همیشه ثابت می‌خواهی: fixed */
-  top: 0;
-  z-index: 2000;
-  background: rgba(255,255,255,.88);
-  backdrop-filter: saturate(180%) blur(8px);
-  border-bottom: 1px solid rgba(0,0,0,.06);
+/* ---- ۱) پایه و ریست سبک‌ها ---- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
+
+:root {
+  /* رنگ‌ها */
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #667085;
+  --border: #e5e7eb;
+
+  --brand: #111827;      /* لوگو/برند */
+  --primary: #2563eb;    /* دکمه اصلی */
+  --primary-contrast: #ffffff;
+
+  /* اندازه‌ها */
+  --container: 1100px;
+  --radius: 10px;
+  --header-h: 56px;
+}
+
+/* دارک‌مود (اختیاری) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0b0c;
+    --fg: #f3f4f6;
+    --muted: #9aa3b2;
+    --border: #22262c;
+
+    --brand: #f3f4f6;
+    --primary: #3b82f6;
+    --primary-contrast: #0b0b0c;
+  }
+}
+
+/* تایپوگرافی پایه */
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Ubuntu", sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* لینک‌ها */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* تصاویر واکنش‌گرا */
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* کانتینر مفید برای صفحات */
+.container {
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+/* ---- ۲) هدر چسبان و ناوبری ---- */
+.site-header{
+  position: sticky;          /* اگر دائمی خواستی: fixed */
+  top: 0;
+  z-index: 2000;             /* روی تمام بخش‌ها */
+  background: color-mix(in oklab, var(--bg), #ffffff 10%);
+  backdrop-filter: saturate(180%) blur(8px);
+  border-bottom: 1px solid var(--border);
+  /* برای زمانی که PromoBar ثابت داری، ارتفاعش را اینجا جمع کن:
+     مثال: top: 32px;  و/یا  scroll-margin-top روی سکشن‌ها  */
+}
+
 .site-header__inner{
-  max-width: 1100px;
+  max-width: var(--container);
   margin: 0 auto;
-  padding: 12px 16px;
+  height: var(--header-h);
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
-.brand { font-weight: 800; color: inherit; text-decoration: none; }
-.nav a { margin-inline-start: 16px; color: inherit; text-decoration: none; }
 
+.brand{
+  font-weight: 800;
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.nav{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.nav a{
+  color: var(--fg);
+  text-decoration: none;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.nav a:hover{
+  background: color-mix(in oklab, var(--border), transparent 60%);
+  text-decoration: none;
+}
+
+/* ---- ۳) بخش‌های عمومی صفحه ---- */
 #main { position: relative; z-index: 0; }
 
+section.page-section{
+  padding: 56px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* هیرو نمونه */
 .home-hero{
-  position: relative;
-  z-index: 1;
   padding: 64px 16px;
-}.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 2000;
-  background: white;
-  border-bottom: 1px solid #eee;
+  text-align: center;
 }
-
-.site-header__inner {
-  max-width: 1100px;
+.home-hero h1{
+  margin: 0 0 8px 0;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.2;
+}
+.home-hero p{
   margin: 0 auto;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  max-width: 720px;
+  color: var(--muted);
 }
 
-.brand {
-  font-weight: 800;
-  color: #111;
-  text-decoration: none;
+/* ---- ۴) اجزاء متداول ---- */
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  transition: transform .06s ease, background .2s ease, border-color .2s ease;
+}
+.btn:hover{
+  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--bg), #ffffff 8%);
+}
+.btn:active{ transform: translateY(0); }
+
+.btn-primary{
+  border-color: transparent;
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+.btn-primary:hover{
+  filter: brightness(1.03);
 }
 
-.nav a {
-  margin-inline-start: 16px;
-  text-decoration: none;
-  color: #333;
-}/* DEBUG: برای اینکه در پروداکشن قطعاً دیده شود */
-.site-header{
-  position: sticky;
-  top: 0;
-  z-index: 2000;
-  background: #ff4db8 !important; /* موقت: رنگ واضح */
-  border-bottom: 1px solid #eee;
+/* کارت ساده */
+.card{
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: 16px;
 }
-.site-header__inner{
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+
+/* شبکه ساده */
+.grid{
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
 }
-.brand{ font-weight: 800; color: #111; text-decoration: none; }
-.nav a{ margin-inline-start: 16px; text-decoration: none; color: #111; }
-#main{ position: relative; z-index: 0; }
+.col-4{ grid-column: span 4; }
+.col-6{ grid-column: span 6; }
+.col-12{ grid-column: span 12; }
+
+@media (max-width: 900px){
+  .nav{ gap: 10px; }
+  .grid{ grid-template-columns: repeat(6, 1fr); }
+  .col-4{ grid-column: span 6; }
+  .col-6{ grid-column: span 6; }
+}
+
+@media (max-width: 600px){
+  .site-header__inner{ height: 52px; }
+  .grid{ grid-template-columns: repeat(2, 1fr); }
+  .col-4, .col-6, .col-12{ grid-column: span 2; }
+}
+
+/* ---- ۵) کمکی‌ها ---- */
+.hidden{ display: none !important; }
+.muted{ color: var(--muted); }
+.center{ text-align: center; }
+.mt-24{ margin-top: 24px; }
+.mb-24{ margin-bottom: 24px; }
