@@ -1,17 +1,14 @@
-import { createClient } from '@supabase/supabase-js'
+// app/lib/supabaseClient.js
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl) {
-  throw new Error('supabaseUrl is required. Check NEXT_PUBLIC_SUPABASE_URL in .env.local')
+if (!url || !key) {
+  // کمک به دیباگ در محیط dev (در پروداکشن لاگ نمی‌گیریم)
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('Supabase env vars are missing: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  }
 }
-if (!supabaseAnonKey) {
-  throw new Error('supabaseAnonKey is required. Check NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local')
-}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { persistSession: true, autoRefreshToken: true },
-  global: { fetch: typeof fetch === 'function' ? fetch : undefined },
-  headers: { 'X-Client-Info': 'novainvest-app' },
-})
+export const supabase = createClient(url, key);
