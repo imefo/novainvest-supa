@@ -1,34 +1,47 @@
 'use client'
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/app/lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 
-export default function AdminPage(){
+export default function AdminPage() {
   const router = useRouter()
   const [ok, setOk] = useState(false)
+  const [err, setErr] = useState('')
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      const user = data?.user
-      if (!user) return router.replace('/login?redirect=/admin')
-      const { data: profile } = await supabase.from('profiles')
-        .select('is_admin').eq('user_id', user.id).maybeSingle()
-      if (!profile?.is_admin) return router.replace('/dashboard')
-      setOk(true)
-    })
+    let mounted = true
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return router.replace('/login')
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('user_id', session.user.id)
+          .single()
+        if (error) throw error
+        if (!data?.is_admin) return router.replace('/dashboard')
+        if (mounted) setOk(true)
+      } catch (e) {
+        if (mounted) setErr(e.message || 'خطا')
+      }
+    })()
+    return () => { mounted = false }
   }, [router])
 
-  if (!ok) return <div className="container">در حال بررسی دسترسی…</div>
+  if (err) return <main className="container"><p className="error">خطا: {err}</p></main>
+  if (!ok) return <main className="container"><p>در حال بارگذاری…</p></main>
 
   return (
     <main className="container">
-      <h1>پنل ادمین</h1>
-      <div style={{display:'grid',gap:16,gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))'}}>
-        <Link href="/admin/plans" className="button">مدیریت پلن‌ها</Link>
-        <Link href="/dashboard" className="button ghost">رفتن به داشبورد</Link>
-        <Link href="/plans" className="button ghost">نمایش پلن‌ها</Link>
-      </div>
+      <h1>مدیریت نوااینوست</h1>
+      <ul className="list">
+        <li><Link href="/admin/plans">مدیریت پلن‌ها</Link></li>
+        <li><Link href="/dashboard">بازگشت به داشبورد</Link></li>
+      </ul>
     </main>
   )
 }

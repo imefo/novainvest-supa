@@ -1,131 +1,30 @@
-:root{
-  --bg:#0b0f17;
-  --panel:#0f1522;
-  --muted:#b7c0d1;
-  --text:#e6ecf5;
-  --brand:#a78bfa;         /* بنفش لطیف */
-  --brand-2:#f59e0b;       /* طلایی */
-  --ok:#22c55e;
-  --warn:#fbbf24;
-  --err:#ef4444;
-  --card:#0d1220;
-  --card-2:#0a0f1a;
-  --ring:0 0 0 3px rgba(167,139,250,.25);
+/* app/globals.css */
+*{ box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+/* خود هدر */
+.site-header{
+  position: sticky;      /* اگر می‌خواهی همیشه ثابت باشد: fixed */
+  top: 0;
+  z-index: 2000;         /* بالاتر از همه سکشن‌ها */
+  background: rgba(255,255,255,.9);
+  backdrop-filter: saturate(180%) blur(8px);
+  border-bottom: 1px solid rgba(0,0,0,.06);
 }
 
-*{box-sizing:border-box}
-html,body{height:100%}
-html{scroll-behavior:smooth}
-body{
-  margin:0; background:radial-gradient(1200px 800px at 70% -10%, rgba(167,139,250,.08), transparent 60%),
-  radial-gradient(900px 600px at -10% 20%, rgba(245,158,11,.06), transparent 60%),
-  var(--bg);
-  color:var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Vazirmatn", "IRANSans", "Tahoma", sans-serif;
-  line-height:1.6;
+/* داخل هدر */
+.site-header__inner{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* Layout */
-.container{max-width:1100px; margin:0 auto; padding:24px}
-.header{
-  position:sticky; top:0; z-index:50;
-  backdrop-filter:saturate(120%) blur(10px);
-  background:linear-gradient(180deg, rgba(13,18,32,.75), rgba(13,18,32,.35));
-  border-bottom:1px solid rgba(255,255,255,.06);
-}
-.header-inner{display:flex; align-items:center; justify-content:space-between; gap:16px}
-.brand{display:flex; align-items:center; gap:10px; text-decoration:none}
-.brand-badge{
-  width:34px; height:34px; border-radius:8px;
-  background:linear-gradient(135deg, var(--brand-2), var(--brand));
-  box-shadow: 0 6px 20px rgba(167,139,250,.35), inset 0 0 30px rgba(255,255,255,.18);
-}
-.brand-title{font-weight:800; letter-spacing:.5px; font-size:18px; color:var(--text)}
-.nav{display:flex; gap:14px; align-items:center}
-.nav a{color:var(--muted); text-decoration:none; padding:8px 10px; border-radius:8px}
-.nav a:hover{color:var(--text); background:rgba(167,139,250,.10)}
+.brand{ font-weight: 800; text-decoration: none; color: inherit; }
+.nav a{ margin-inline-start: 16px; text-decoration: none; color: inherit; }
 
-/* Buttons */
-.btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  border:1px solid rgba(255,255,255,.08);
-  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-  color:var(--text);
-  padding:10px 14px; border-radius:10px; text-decoration:none; cursor:pointer;
-  transition:.2s transform, .2s background, .2s border-color;
-}
-.btn:hover{transform:translateY(-1px); border-color:rgba(255,255,255,.18)}
-.btn-primary{
-  background:linear-gradient(90deg, var(--brand-2), var(--brand));
-  border-color:transparent; color:#0b0f17; font-weight:700;
-  box-shadow:0 12px 28px rgba(167,139,250,.32);
-}
-.btn-primary:hover{filter:saturate(1.1)}
-
-/* Hero */
-.hero{padding:64px 0 24px}
-.hero-wrap{
-  display:grid; grid-template-columns: 1.25fr 1fr; gap:32px;
-  align-items:center;
-}
-.hero-title{
-  font-size:42px; font-weight:900; line-height:1.15; letter-spacing:.2px;
-  margin:0 0 14px;
-}
-.hero-title .gold{background:linear-gradient(90deg,#f9d976,#f39f86); -webkit-background-clip:text; background-clip:text; color:transparent}
-.hero-sub{color:var(--muted); font-size:16px; margin-bottom:22px}
-.hero-card{
-  border:1px solid rgba(255,255,255,.08); border-radius:16px;
-  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-  padding:18px; box-shadow: 0 10px 30px rgba(0,0,0,.35);
-}
-
-/* Quick Sign-up form */
-.form{display:grid; gap:12px}
-.row{display:grid; gap:10px}
-@media(min-width:640px){.row{grid-template-columns:1fr 1fr;}}
-.input, .select{
-  width:100%; padding:12px 14px; border-radius:10px;
-  border:1px solid rgba(255,255,255,.12); background:rgba(8,12,22,.6); color:var(--text);
-  outline:none;
-}
-.input:focus, .select:focus{box-shadow:var(--ring); border-color:rgba(167,139,250,.6)}
-.help{font-size:12px; color:var(--muted)}
-.form-actions{display:flex; gap:10px; flex-wrap:wrap}
-
-.hero-bg{
-  position:relative; overflow:hidden; border-radius:16px;
-  border:1px solid rgba(255,255,255,.08);
-  background:#0a0f1a;
-}
-.hero-bg img{display:block; width:100%; height:auto; opacity:.92}
-
-/* Plans grid (home section) */
-.section{padding:24px 0 60px}
-.section h2{margin:0 0 14px; font-size:22px}
-.grid{
-  display:grid; gap:16px;
-  grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
-}
-.card{
-  border:1px solid rgba(255,255,255,.08); border-radius:14px;
-  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-  padding:16px;
-}
-.card h3{margin:0 0 8px; font-size:18px}
-.meta{display:flex; gap:10px; align-items:center; color:var(--muted); font-size:13px}
-.price{font-weight:800; font-size:22px}
-.kicker{font-size:12px; color:var(--muted)}
-.list{display:grid; gap:10px}
-.error{color:#ff6b6b}
-
-/* Footer */
-.footer{
-  margin-top:40px; padding:30px 0; color:var(--muted);
-  border-top:1px solid rgba(255,255,255,.06);
-  text-align:center; font-size:13px;
-}
-
-/* Helpers */
-.hide{display:none}
-.center{display:flex; align-items:center; justify-content:center}
+/* محتوای صفحه زیر هدر بماند */
+#main{ position: relative; z-index: 0; }
