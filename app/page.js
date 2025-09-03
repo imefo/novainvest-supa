@@ -15,9 +15,9 @@ export default function HomePage() {
         <div className="container hero-grid">
           <div className="hero-copy">
             <p className="chip">نسل جدید سرمایه‌گذاری</p>
-            <h1>
-              NovaInvest — <span className="accent">هوشمند، شفاف، سریع</span>
-            </h1>
+<h1>
+  NovaInvest — <span className="accent">هوشمند، شفاف، سریع 🚀</span>
+</h1>
             <p className="muted">
               پلن‌های روشن، داشبورد سریع و امنیت درجه‌یک — تجربه‌ای جذاب برای موبایل و دسکتاپ.
             </p>
