@@ -7,6 +7,9 @@ export const metadata = {
   description: "Invest smart.",
 };
 
+// اگر خواستی مطمئن شی صفحه حتماً دینامیک رندر میشه (کش نشه):
+// export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: {

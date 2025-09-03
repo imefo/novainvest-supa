@@ -1,31 +1,25 @@
 // components/Header.tsx
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
+  console.log("HEADER MOUNTED ✅");
   return (
-    <header className="site-header">
-      <div className="site-header__inner">
-        <Link href="/" className="brand">NovaInvest</Link>
-
-        <button
-          className="menu-toggle"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-        >
-          ☰
-        </button>
-
-        <nav className={`nav ${menuOpen ? "open" : ""}`}>
-          <Link href="/about" onClick={() => setMenuOpen(false)}>About</Link>
-          <Link href="/plans" onClick={() => setMenuOpen(false)}>Plans</Link>
-          <Link href="/contact" onClick={() => setMenuOpen(false)}>Contact</Link>
-        </nav>
-      </div>
-    </header>
+    <div
+      id="header-test"
+      style={{
+        position: "fixed",
+        inset: "0 auto auto 0",
+        width: "100%",
+        zIndex: 99999,
+        background: "#111",
+        color: "#fff",
+        padding: "12px 16px",
+        fontWeight: 800,
+        textAlign: "center",
+        letterSpacing: "0.5px",
+      }}
+    >
+      HEADER TEST — اگر این نوار را می‌بینی یعنی Header رندر شده
+    </div>
   );
 }
