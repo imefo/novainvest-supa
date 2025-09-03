@@ -6,10 +6,9 @@ export default function Header() {
     <header className="site-header">
       <div className="site-header__inner">
         <Link href="/" className="brand">NovaInvest</Link>
-
         <nav className="nav">
-          <Link href="/about">About</Link>
-          <Link href="/plans">Plans</Link>
+          <Link href="/about">About</Link>{" "}
+          <Link href="/plans">Plans</Link>{" "}
           <Link href="/contact">Contact</Link>
         </nav>
       </div>
