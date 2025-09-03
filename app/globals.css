@@ -1,4 +1,4 @@
-/* هدر چسبان */
+/* app/globals.css (گزیدهٔ لازم برای هدر) */
 .site-header{
   position: sticky;
   top: 0;
@@ -16,8 +16,6 @@
   justify-content: space-between;
 }
 .brand { font-weight: 800; color: #111; text-decoration: none; }
-
-/* دکمه موبایل */
 .menu-toggle {
   display: none;
   background: none;
@@ -25,40 +23,15 @@
   font-size: 24px;
   cursor: pointer;
 }
-
-/* منوی دسکتاپ */
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.nav a {
-  color: #111;
-  padding: 6px 8px;
-  border-radius: 8px;
-}
-.nav a:hover {
-  background: rgba(0,0,0,0.05);
-  text-decoration: none;
-}
-
-/* منوی موبایل */
-@media (max-width: 768px) {
-  .menu-toggle { display: block; }
-  .nav {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    top: 56px;        /* ارتفاع هدر */
-    right: 0;
-    width: 200px;
-    padding: 12px;
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 0 0 8px 8px;
+.nav { display: flex; align-items: center; gap: 16px; }
+.nav a { color: #111; padding: 6px 8px; border-radius: 8px; }
+.nav a:hover { background: rgba(0,0,0,0.05); text-decoration: none; }
+@media (max-width: 768px){
+  .menu-toggle{ display:block; }
+  .nav{
+    display:none; flex-direction:column; position:absolute; top:56px; right:0;
+    width:200px; padding:12px; background:#fff; border:1px solid #eee; border-radius:0 0 8px 8px;
   }
-  .nav.open { display: flex; }
+  .nav.open{ display:flex; }
 }
-
-/* محتوا */
-#main { position: relative; z-index: 0; }
+#main{ position:relative; z-index:0; }

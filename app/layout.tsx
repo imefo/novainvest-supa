@@ -15,22 +15,10 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
+        {/* DEBUG fingerprint: اگر این را در سورس دیدی یعنی layout.tsx فعال است */}
+        {/* LAYOUT_ACTIVE */}
         <Header />
-        <main id="main">
-          <div
-            style={{
-              padding: "24px",
-              background: "#ffdd00",
-              color: "#111",
-              fontSize: "20px",
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            ✅ LAYOUT ACTIVE — این متن داخل layout.tsx است
-          </div>
-          {children}
-        </main>
+        <main id="main">{children}</main>
       </body>
     </html>
   );
