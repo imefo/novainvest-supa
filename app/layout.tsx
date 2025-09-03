@@ -7,13 +7,10 @@ export const metadata = {
   description: "Invest smart.",
 };
 
-export default function RootLayout({
-  children,
-}: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fa" dir="rtl">
       <body>
-        {/* LAYOUT_ACTIVE */}
         <Header />
         <main id="main">{children}</main>
       </body>
