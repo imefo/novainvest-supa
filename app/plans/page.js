@@ -1,34 +1,30 @@
-// app/plans/page.js
 "use client";
+import Link from "next/link";
 
-const PLANS = [
-  { id: "safe",   title: "پلن امن",     desc: "ریسک کم، بازده پایدار." },
-  { id: "smart",  title: "پلن هوشمند",  desc: "تعادل ریسک و بازده." },
-  { id: "risk",   title: "پلن پرریسک",  desc: "ریسک بالاتر، پتانسیل بازده بیشتر." },
+const plans = [
+  { id:"safe", title:"امن", price:"۱۵٪ سالانه", points:["ریسک پایین","برداشت آسان","پشتیبانی ویژه"] },
+  { id:"balanced", title:"متعادل", price:"۲۵٪ سالانه", points:["ریسک متوسط","تنظیم‌پذیر","گزارش دقیق"] },
+  { id:"growth", title:"رشد", price:"۴۰٪ سالانه", points:["ریسک کنترل‌شده","بازده بالا","داشبورد حرفه‌ای"] },
+  { id:"pro", title:"حرفه‌ای", price:"متغیر", points:["استراتژی‌های پیشرفته","SLA اختصاصی","سرویس مشاوره"] },
 ];
 
-export default function PlansPage() {
+export default function PlansPage(){
   return (
-    <section className="container" style={{ padding: "40px 0" }}>
-      <h1>پلن‌ها</h1>
-      <p className="muted">یک پلن مناسب انتخاب کنید.</p>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-        gap: 16, marginTop: 16
-      }}>
-        {PLANS.map(p => (
-          <article key={p.id} style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 12, padding: 16
-          }}>
-            <h3 style={{ marginTop: 0 }}>{p.title}</h3>
-            <p className="muted" style={{ marginTop: 8 }}>{p.desc}</p>
-            <a href={`/plans/${p.id}`} className="btn">جزئیات</a>
-          </article>
-        ))}
+    <section className="section" dir="rtl">
+      <div className="container">
+        <h1 className="section-title">پلن‌های قابل انتخاب</h1>
+        <div className="grid-4">
+          {plans.map(p => (
+            <article key={p.id} className="glass-card plan">
+              <div className="badge">{p.title}</div>
+              <div className="price">{p.price}</div>
+              <ul className="muted" style={{paddingInlineStart:18,margin:0}}>
+                {p.points.map((t,i)=><li key={i}>• {t}</li>)}
+              </ul>
+              <Link className="glass-btn glass-btn--primary" href={`/plans/${p.id}`}>انتخاب پلن</Link>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
