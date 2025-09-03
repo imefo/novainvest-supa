@@ -2,10 +2,37 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+// مسیر نسبی به lib (یک سطح بالاتر)
+import { supabase } from "../lib/supabaseClient";
+import { useRouter } from "next/navigation";
+
+type SUser = { id: string; email?: string | null };
 
 export default function Header() {
+  const router = useRouter();
+  const [user, setUser] = useState<SUser | null>(null);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (mounted) setUser(data.user as SUser | null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user as SUser | null);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setOpen(false);
+    router.replace("/login");
+  };
 
   return (
     <header className="site-header">
@@ -24,6 +51,22 @@ export default function Header() {
         <nav className={`nav ${open ? "open" : ""}`}>
           <Link href="/about" onClick={() => setOpen(false)}>About</Link>
           <Link href="/plans" onClick={() => setOpen(false)}>Plans</Link>
+
+          {!user && <Link href="/login" onClick={() => setOpen(false)}>Sign in</Link>}
+
+          {user && (
+            <>
+              <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
+              <Link href="/admin" onClick={() => setOpen(false)}>Admin</Link>
+              <button
+                onClick={handleSignOut}
+                style={{ background: "transparent", border: 0, cursor: "pointer" }}
+              >
+                Sign out
+              </button>
+            </>
+          )}
+
           <Link href="/contact" onClick={() => setOpen(false)}>Contact</Link>
         </nav>
       </div>

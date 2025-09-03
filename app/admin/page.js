@@ -1,47 +1,42 @@
-'use client'
-export const dynamic = 'force-dynamic'
+// app/admin/page.js
+"use client";
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { supabase } from '../lib/supabaseClient'
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function AdminPage() {
-  const router = useRouter()
-  const [ok, setOk] = useState(false)
-  const [err, setErr] = useState('')
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return router.replace('/login')
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('user_id', session.user.id)
-          .single()
-        if (error) throw error
-        if (!data?.is_admin) return router.replace('/dashboard')
-        if (mounted) setOk(true)
-      } catch (e) {
-        if (mounted) setErr(e.message || 'خطا')
-      }
-    })()
-    return () => { mounted = false }
-  }, [router])
+    let mounted = true;
 
-  if (err) return <main className="container"><p className="error">خطا: {err}</p></main>
-  if (!ok) return <main className="container"><p>در حال بارگذاری…</p></main>
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        router.replace("/login");
+      } else if (mounted) {
+        // TODO: اینجا بعداً نقش (role) ادمین رو چک می‌کنیم
+        setReady(true);
+      }
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session?.user) router.replace("/login");
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  if (!ready) return null;
 
   return (
-    <main className="container">
-      <h1>مدیریت نوااینوست</h1>
-      <ul className="list">
-        <li><Link href="/admin/plans">مدیریت پلن‌ها</Link></li>
-        <li><Link href="/dashboard">بازگشت به داشبورد</Link></li>
-      </ul>
-    </main>
-  )
+    <section className="container" style={{ padding: "40px 0" }}>
+      <h1>Admin</h1>
+      <p>اینجا پنل مدیریت است.</p>
+    </section>
+  );
 }
