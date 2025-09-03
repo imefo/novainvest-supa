@@ -1,5 +1,3 @@
-cat > app/page.js << 'EOF'
-// app/page.js
 "use client";
 
 import Link from "next/link";
@@ -70,20 +68,40 @@ export default function HomePage() {
           <h2 className="section-title">چرا نوااینوست؟</h2>
           <div className="features-grid">
             <article className="card feature">
-              <div className="icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2l9 4-9 4-9-4 9-4zm9 7l-9 4-9-4v6l9 4 9-4V9z"/></svg></div>
-              <h3>ساختار شفاف</h3><p className="muted">کارمزدها مشخص، گزارش‌ها واضح.</p>
+              <div className="icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M12 2l9 4-9 4-9-4 9-4zm9 7l-9 4-9-4v6l9 4 9-4V9z"/>
+                </svg>
+              </div>
+              <h3>ساختار شفاف</h3>
+              <p className="muted">کارمزدها مشخص، گزارش‌ها واضح.</p>
             </article>
             <article className="card feature">
-              <div className="icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 3a9 9 0 100 18 9 9 0 000-18zm1 9h4v2h-6V7h2v5z"/></svg></div>
-              <h3>داشبورد بلادرنگ</h3><p className="muted">نمودارها و آمار لحظه‌ای.</p>
+              <div className="icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M12 3a9 9 0 100 18 9 9 0 000-18zm1 9h4v2h-6V7h2v5z"/>
+                </svg>
+              </div>
+              <h3>داشبورد بلادرنگ</h3>
+              <p className="muted">نمودارها و آمار لحظه‌ای.</p>
             </article>
             <article className="card feature">
-              <div className="icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 1l3 5 6 .9-4.5 4.1L17 18l-5-2.7L7 18l1.5-6.9L4 6.9 10 6l2-5z"/></svg></div>
-              <h3>امنیت جدی</h3><p className="muted">رمزنگاری و احراز هویت امن.</p>
+              <div className="icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M12 1l3 5 6 .9-4.5 4.1L17 18l-5-2.7L7 18l1.5-6.9L4 6.9 10 6l2-5z"/>
+                </svg>
+              </div>
+              <h3>امنیت جدی</h3>
+              <p className="muted">رمزنگاری و احراز هویت امن.</p>
             </article>
             <article className="card feature">
-              <div className="icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 13h2v-2H3v2zm4 0h14v-2H7v2z"/></svg></div>
-              <h3>پلن‌های منعطف</h3><p className="muted">از امن تا پرریسک.</p>
+              <div className="icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M3 13h2v-2H3v2zm4 0h14v-2H7v2z"/>
+                </svg>
+              </div>
+              <h3>پلن‌های منعطف</h3>
+              <p className="muted">از امن تا پرریسک.</p>
             </article>
           </div>
         </div>
@@ -91,4 +109,3 @@ export default function HomePage() {
     </>
   );
 }
-EOF
