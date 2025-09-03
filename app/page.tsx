@@ -1,13 +1,14 @@
 // app/page.tsx
+"use client";
+
+import React from "react";
+
 export default function HomePage() {
-  return (
-    <section className="home-hero">
-      <h1>صفحهٔ اصلی</h1>
-      <p>به نوااینوست خوش آمدید.</p>
-    </section>
-  );
-}// app/page.tsx
-export default function HomePage() {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // TODO: اینجا بعداً لاجیک ثبت‌نام رو می‌ذاریم
+  };
+
   return (
     <>
       {/* هیرو */}
@@ -23,7 +24,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <form className="hero-form" onSubmit={(e) => e.preventDefault()}>
+          <form className="hero-form" onSubmit={handleSubmit}>
             <h2>ثبت‌نام سریع</h2>
             <div className="form-row">
               <input type="text" placeholder="نام" required />
@@ -31,7 +32,9 @@ export default function HomePage() {
             </div>
             <input type="email" placeholder="ایمیل" required />
             <input type="password" placeholder="رمز عبور" required />
-            <button className="btn btn-primary" type="submit">ادامه</button>
+            <button className="btn btn-primary" type="submit">
+              ادامه
+            </button>
             <p className="muted tiny">
               با ورود یا ثبت‌نام، شرایط استفاده را می‌پذیرید.
             </p>
@@ -39,7 +42,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* نمونه سکشن بعدی */}
+      {/* سکشن نمونه بعدی */}
       <section className="page-section">
         <div className="container">
           <h2>پلن‌های فعال</h2>
