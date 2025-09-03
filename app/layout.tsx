@@ -15,7 +15,6 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
-        {/* DEBUG fingerprint: اگر این را در سورس دیدی یعنی layout.tsx فعال است */}
         {/* LAYOUT_ACTIVE */}
         <Header />
         <main id="main">{children}</main>
