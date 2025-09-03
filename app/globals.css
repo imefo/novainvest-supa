@@ -1,9 +1,8 @@
 /* ===========================
    app/globals.css
-   سبک سراسری + هدر نهایی
+   استایل سراسری + هدر با منوی موبایل
    =========================== */
 
-/* ریست پایه */
 *,
 *::before,
 *::after { box-sizing: border-box; }
@@ -23,30 +22,25 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* لینک‌ها */
 a {
   color: inherit;
   text-decoration: none;
 }
 a:hover { text-decoration: underline; }
 
-/* تصاویر و مدیا واکنش‌گرا */
 img, svg, video, canvas {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* کانتینر عمومی */
 .container {
   max-width: 1100px;
   margin-inline: auto;
   padding-inline: 16px;
 }
 
-/* ===========================
-   هدر چسبان
-   =========================== */
+/* --- هدر --- */
 .site-header{
   position: sticky;
   top: 0;
@@ -71,12 +65,21 @@ img, svg, video, canvas {
   text-decoration: none;
 }
 
+/* دکمه موبایل */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* منوی دسکتاپ */
 .nav {
   display: flex;
   align-items: center;
   gap: 16px;
 }
-
 .nav a {
   color: #111;
   padding: 6px 8px;
@@ -87,79 +90,29 @@ img, svg, video, canvas {
   text-decoration: none;
 }
 
-/* ===========================
-   بخش محتوا
-   =========================== */
+/* منوی موبایل */
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+  }
+
+  .nav {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 56px; /* ارتفاع هدر */
+    right: 0;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 0 0 8px 8px;
+    width: 200px;
+    padding: 12px;
+  }
+
+  .nav.open {
+    display: flex;
+  }
+}
+
+/* --- محتوا --- */
 #main { position: relative; z-index: 0; }
-
-section.page-section {
-  padding: 56px 0;
-  border-bottom: 1px solid #eee;
-}
-
-/* ===========================
-   اجزای متداول
-   =========================== */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fff;
-  color: #111;
-  cursor: pointer;
-  transition: all .2s ease;
-}
-.btn:hover {
-  transform: translateY(-1px);
-  background: #f9f9f9;
-}
-.btn:active { transform: translateY(0); }
-
-.btn-primary {
-  border-color: transparent;
-  background: #2563eb;
-  color: #fff;
-}
-.btn-primary:hover { filter: brightness(1.05); }
-
-/* کارت ساده */
-.card {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  background: #fff;
-  padding: 16px;
-}
-
-/* شبکه ساده */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
-}
-.col-4 { grid-column: span 4; }
-.col-6 { grid-column: span 6; }
-.col-12 { grid-column: span 12; }
-
-@media (max-width: 900px){
-  .grid { grid-template-columns: repeat(6, 1fr); }
-  .col-4 { grid-column: span 6; }
-  .col-6 { grid-column: span 6; }
-}
-
-@media (max-width: 600px){
-  .site-header__inner { height: 52px; }
-  .grid { grid-template-columns: repeat(2, 1fr); }
-  .col-4, .col-6, .col-12 { grid-column: span 2; }
-}
-
-/* کمکی */
-.hidden { display: none !important; }
-.muted { color: #666; }
-.center { text-align: center; }
-.mt-24 { margin-top: 24px; }
-.mb-24 { margin-bottom: 24px; }
