@@ -1,34 +1,27 @@
-'use client'
-import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/app/lib/supabaseClient'
+// app/dashboard/page.tsx
+"use client";
 
-export default function Dashboard(){
-  const router = useRouter()
-  const [ok, setOk] = useState(false)
-  const [profile, setProfile] = useState(null)
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return router.replace('/login?redirect=/dashboard')
-      const { data } = await supabase.from('profiles').select('is_admin, full_name').eq('user_id', user.id).maybeSingle()
-      setProfile(data || null)
-      setOk(true)
-    })()
-  }, [router])
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) router.replace("/login");
+      else setReady(true);
+    });
+  }, [router]);
 
-  if (!ok) return <div className="container">در حال بارگذاری داشبورد…</div>
+  if (!ready) return null;
 
   return (
-    <main className="container">
-      <h1>داشبورد</h1>
-      <p>خوش آمدید {profile?.full_name ? `، ${profile.full_name}` : ''}</p>
-      <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
-        <Link className="button" href="/plans">رفتن به پلن‌ها</Link>
-        {profile?.is_admin && <Link className="button ghost" href="/admin">رفتن به پنل ادمین</Link>}
-      </div>
-    </main>
-  )
+    <section className="container" style={{ padding: "40px 0" }}>
+      <h1>Dashboard</h1>
+      <p>به داشبورد خوش آمدید.</p>
+    </section>
+  );
 }
