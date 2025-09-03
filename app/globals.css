@@ -144,4 +144,15 @@ html[dir="rtl"] .site-header__inner{ flex-direction: row-reverse; }
   .home-hero{ padding: 56px 0; }
   .site-header__inner{ height: 52px; }
   .hero-form .form-row{ grid-template-columns: 1fr; }
+}.btn{
+  display:inline-block;
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.12);
+  color:#fff; text-decoration:none;
 }
+.btn:hover{ background: rgba(255,255,255,.2); text-decoration:none; }
+
+h1,h2,h3{ margin:0 0 12px 0; }
+section + section{ border-top: 1px solid rgba(255,255,255,.06); }
