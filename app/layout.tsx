@@ -15,7 +15,6 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
-        {/* LAYOUT_ACTIVE */}
         <Header />
         <main id="main">{children}</main>
       </body>
