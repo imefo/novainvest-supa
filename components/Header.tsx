@@ -3,7 +3,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+// مسیر نسبی به lib (یک سطح بالاتر)
+import { supabase } from "../lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
 type SUser = { id: string; email?: string | null };
@@ -13,18 +14,14 @@ export default function Header() {
   const [user, setUser] = useState<SUser | null>(null);
   const [open, setOpen] = useState(false);
 
-  // خواندن سشن فعلی + گوش‌دادن به تغییر وضعیت
   useEffect(() => {
     let mounted = true;
-
     supabase.auth.getUser().then(({ data }) => {
       if (mounted) setUser(data.user as SUser | null);
     });
-
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user as SUser | null);
     });
-
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
@@ -42,7 +39,6 @@ export default function Header() {
       <div className="site-header__inner">
         <Link href="/" className="brand">NovaInvest</Link>
 
-        {/* دکمه موبایل */}
         <button
           className="menu-toggle"
           aria-label="Toggle menu"
@@ -56,12 +52,8 @@ export default function Header() {
           <Link href="/about" onClick={() => setOpen(false)}>About</Link>
           <Link href="/plans" onClick={() => setOpen(false)}>Plans</Link>
 
-          {/* اگر لاگین نیست → Sign in */}
-          {!user && (
-            <Link href="/login" onClick={() => setOpen(false)}>Sign in</Link>
-          )}
+          {!user && <Link href="/login" onClick={() => setOpen(false)}>Sign in</Link>}
 
-          {/* اگر لاگین هست → Dashboard + Admin + خروج */}
           {user && (
             <>
               <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>

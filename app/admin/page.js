@@ -1,8 +1,8 @@
-// app/admin/page.tsx
+// app/admin/page.js
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
 export default function AdminPage() {
@@ -11,7 +11,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) router.replace("/login"); // فعلاً هر یوزری → ادمین؛ بعداً role چک کن
+      if (!data.user) router.replace("/login"); // بعداً role اضافه می‌کنیم
       else setReady(true);
     });
   }, [router]);
