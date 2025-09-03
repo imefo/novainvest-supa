@@ -10,10 +10,25 @@ export default function AdminPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) router.replace("/login"); // بعداً role اضافه می‌کنیم
-      else setReady(true);
+      if (!data.user) {
+        router.replace("/login");
+      } else if (mounted) {
+        // TODO: اینجا بعداً نقش (role) ادمین رو چک می‌کنیم
+        setReady(true);
+      }
     });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session?.user) router.replace("/login");
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, [router]);
 
   if (!ready) return null;
