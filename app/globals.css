@@ -35,3 +35,5 @@
   .nav.open{ display:flex; }
 }
 #main{ position:relative; z-index:0; }
+/* TEMP: جا برای هدر فیکس */
+body { padding-top: 60px; }
