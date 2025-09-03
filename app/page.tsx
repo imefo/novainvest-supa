@@ -1,17 +1,14 @@
 // app/page.tsx
 "use client";
-
 import React from "react";
 
 export default function HomePage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: اینجا بعداً لاجیک ثبت‌نام رو می‌ذاریم
   };
 
   return (
     <>
-      {/* هیرو */}
       <section className="home-hero">
         <div className="container hero-inner">
           <div className="hero-copy">
@@ -19,8 +16,7 @@ export default function HomePage() {
               سرمایه‌گذاری هوشمند با <span className="accent">NovaInvest</span>
             </h1>
             <p className="muted">
-              پلن‌های روشن و قابل‌فهم، داشبورد سریع و پاسخگو — با تمرکز بر امنیت و
-              حریم خصوصی.
+              پلن‌های روشن و قابل‌فهم، داشبورد سریع و پاسخگو — با تمرکز بر امنیت و حریم خصوصی.
             </p>
           </div>
 
@@ -32,17 +28,12 @@ export default function HomePage() {
             </div>
             <input type="email" placeholder="ایمیل" required />
             <input type="password" placeholder="رمز عبور" required />
-            <button className="btn btn-primary" type="submit">
-              ادامه
-            </button>
-            <p className="muted tiny">
-              با ورود یا ثبت‌نام، شرایط استفاده را می‌پذیرید.
-            </p>
+            <button className="btn btn-primary" type="submit">ادامه</button>
+            <p className="muted tiny">با ورود یا ثبت‌نام، شرایط استفاده را می‌پذیرید.</p>
           </form>
         </div>
       </section>
 
-      {/* سکشن نمونه بعدی */}
       <section className="page-section">
         <div className="container">
           <h2>پلن‌های فعال</h2>
