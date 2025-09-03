@@ -7,9 +7,6 @@ export const metadata = {
   description: "Invest smart.",
 };
 
-// اگر خواستی مطمئن شی صفحه حتماً دینامیک رندر میشه (کش نشه):
-// export const dynamic = "force-dynamic";
-
 export default function RootLayout({
   children,
 }: {
@@ -19,7 +16,21 @@ export default function RootLayout({
     <html lang="fa" dir="rtl">
       <body>
         <Header />
-        <main id="main">{children}</main>
+        <main id="main">
+          <div
+            style={{
+              padding: "24px",
+              background: "#ffdd00",
+              color: "#111",
+              fontSize: "20px",
+              fontWeight: "bold",
+              textAlign: "center",
+            }}
+          >
+            ✅ LAYOUT ACTIVE — این متن داخل layout.tsx است
+          </div>
+          {children}
+        </main>
       </body>
     </html>
   );

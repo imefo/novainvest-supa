@@ -2,13 +2,13 @@
 "use client";
 
 export default function Header() {
-  console.log("HEADER MOUNTED ✅");
   return (
     <div
       id="header-test"
       style={{
         position: "fixed",
-        inset: "0 auto auto 0",
+        top: 0,
+        left: 0,
         width: "100%",
         zIndex: 99999,
         background: "#111",
