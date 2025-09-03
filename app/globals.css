@@ -1,46 +1,4 @@
-/* ===========================
-   app/globals.css
-   استایل سراسری + هدر با منوی موبایل
-   =========================== */
-
-*,
-*::before,
-*::after { box-sizing: border-box; }
-
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  background: #fff;
-  color: #111;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-a:hover { text-decoration: underline; }
-
-img, svg, video, canvas {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-.container {
-  max-width: 1100px;
-  margin-inline: auto;
-  padding-inline: 16px;
-}
-
-/* --- هدر --- */
+/* هدر چسبان */
 .site-header{
   position: sticky;
   top: 0;
@@ -49,7 +7,6 @@ img, svg, video, canvas {
   backdrop-filter: saturate(180%) blur(8px);
   border-bottom: 1px solid #eee;
 }
-
 .site-header__inner{
   max-width: 1100px;
   margin: 0 auto;
@@ -58,12 +15,7 @@ img, svg, video, canvas {
   align-items: center;
   justify-content: space-between;
 }
-
-.brand {
-  font-weight: 800;
-  color: #111;
-  text-decoration: none;
-}
+.brand { font-weight: 800; color: #111; text-decoration: none; }
 
 /* دکمه موبایل */
 .menu-toggle {
@@ -92,27 +44,21 @@ img, svg, video, canvas {
 
 /* منوی موبایل */
 @media (max-width: 768px) {
-  .menu-toggle {
-    display: block;
-  }
-
+  .menu-toggle { display: block; }
   .nav {
     display: none;
     flex-direction: column;
     position: absolute;
-    top: 56px; /* ارتفاع هدر */
+    top: 56px;        /* ارتفاع هدر */
     right: 0;
+    width: 200px;
+    padding: 12px;
     background: #fff;
     border: 1px solid #eee;
     border-radius: 0 0 8px 8px;
-    width: 200px;
-    padding: 12px;
   }
-
-  .nav.open {
-    display: flex;
-  }
+  .nav.open { display: flex; }
 }
 
-/* --- محتوا --- */
+/* محتوا */
 #main { position: relative; z-index: 0; }

@@ -10,10 +10,8 @@ export default function Header() {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        {/* لوگو */}
         <Link href="/" className="brand">NovaInvest</Link>
 
-        {/* دکمه منوی موبایل */}
         <button
           className="menu-toggle"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -22,7 +20,6 @@ export default function Header() {
           ☰
         </button>
 
-        {/* منوی اصلی */}
         <nav className={`nav ${menuOpen ? "open" : ""}`}>
           <Link href="/about" onClick={() => setMenuOpen(false)}>About</Link>
           <Link href="/plans" onClick={() => setMenuOpen(false)}>Plans</Link>

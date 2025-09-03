@@ -1,19 +1,23 @@
-// components/Header.tsx
-import Link from "next/link";
+// app/layout.tsx
+import "./globals.css";            // مسیر درست نسبت به app/
+import Header from "../components/Header"; // ایمپورت نسبی؛ روی لینوکس مطمئن‌تر است
 
-export default function Header() {
-  // تست کاملاً قابل‌دیدن در پروداکشن
+export const metadata = {
+  title: "NovaInvest",
+  description: "Invest smart.",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <header
-      className="site-header"
-      style={{ background: "hotpink", padding: 12 }}
-    >
-      <nav>
-        <Link href="/">HEADER TEST</Link> {" | "}
-        <Link href="/about">About</Link> {" | "}
-        <Link href="/plans">Plans</Link> {" | "}
-        <Link href="/contact">Contact</Link>
-      </nav>
-    </header>
+    <html lang="fa" dir="rtl">
+      <body>
+        <Header />
+        <main id="main">{children}</main>
+      </body>
+    </html>
   );
 }
