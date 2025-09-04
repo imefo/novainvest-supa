@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { isAdmin } from "@/lib/role";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -14,6 +15,11 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.replace("/login");
+        return;
+      }
+      // اگر ادمین بود → /admin
+      if (await isAdmin(user)) {
+        router.replace("/admin");
         return;
       }
       setUser(user);
