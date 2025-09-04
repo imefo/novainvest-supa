@@ -1,9 +1,7 @@
 /* =========================
-   Global Modern Styles
-   NovaInvest Theme
+   Global Theme - NovaInvest
    ========================= */
 
-/* ========== Variables ========== */
 :root {
   --bg: #0b0b0c;
   --fg: #f3f4f6;
@@ -21,15 +19,7 @@
   --transition: 0.25s ease;
 }
 
-/* ========== Base ========== */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
+html, body {
   margin: 0;
   padding: 0;
   font-family: "Inter", sans-serif;
@@ -38,36 +28,24 @@ body {
   line-height: 1.6;
 }
 
+/* Links */
 a {
   color: inherit;
   text-decoration: none;
   transition: var(--transition);
 }
-a:hover {
-  color: var(--accent-2);
-}
+a:hover { color: var(--accent-2); }
 
-/* ========== Utility ========== */
+/* Utilities */
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
+.muted { color: var(--muted); }
+.accent { color: var(--accent); }
 
-.muted {
-  color: var(--muted);
-}
-.accent {
-  color: var(--accent);
-}
-.success {
-  color: var(--success);
-}
-.danger {
-  color: var(--danger);
-}
-
-/* ========== Buttons ========== */
+/* Buttons */
 .btn {
   display: inline-block;
   padding: 10px 16px;
@@ -79,27 +57,14 @@ a:hover {
   cursor: pointer;
   transition: var(--transition);
 }
-.btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
+.btn:hover { background: rgba(255, 255, 255, 0.15); }
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   border: none;
 }
-.btn-primary:hover {
-  filter: brightness(1.1);
-}
+.btn-danger { background: var(--danger); border: none; }
 
-.btn-danger {
-  background: var(--danger);
-  border: none;
-}
-.btn-danger:hover {
-  filter: brightness(1.1);
-}
-
-/* ========== Cards ========== */
+/* Cards */
 .card {
   background: var(--card);
   border: 1px solid var(--card-stroke);
@@ -108,15 +73,10 @@ a:hover {
   backdrop-filter: blur(12px) saturate(150%);
   transition: var(--transition);
 }
-.card:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent);
-}
+.card:hover { transform: translateY(-2px); border-color: var(--accent); }
 
-/* ========== Forms ========== */
-input,
-select,
-textarea {
+/* Forms */
+input, select, textarea {
   width: 100%;
   padding: 10px 12px;
   border-radius: var(--radius);
@@ -125,20 +85,11 @@ textarea {
   color: var(--fg);
   font-size: 14px;
   outline: none;
-  transition: var(--transition);
 }
-input::placeholder,
-textarea::placeholder {
-  color: var(--muted);
-}
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--accent-2);
-  background: rgba(255, 255, 255, 0.1);
-}
+input::placeholder { color: var(--muted); }
+input:focus { border-color: var(--accent-2); }
 
-/* ========== Tables ========== */
+/* Tables */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -146,58 +97,22 @@ table {
   border-radius: var(--radius);
   overflow: hidden;
 }
-thead {
-  background: rgba(255, 255, 255, 0.08);
-}
-th,
-td {
+thead { background: rgba(255, 255, 255, 0.08); }
+th, td {
   padding: 12px 14px;
   text-align: right;
   border-bottom: 1px solid var(--card-stroke);
 }
-tr:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
+tr:hover { background: rgba(255, 255, 255, 0.04); }
 
-/* ========== Sections ========== */
-section {
-  margin-bottom: 48px;
-}
-.section-title {
-  font-size: clamp(22px, 4vw, 32px);
-  margin-bottom: 16px;
-}
+/* Sections */
+section { margin-bottom: 48px; }
+.section-title { font-size: clamp(22px, 4vw, 32px); margin-bottom: 16px; }
 
-/* ========== Hero ========== */
-.hero {
-  position: relative;
-  padding: 80px 0;
-  text-align: center;
-  background: radial-gradient(circle at top right, var(--accent)30%, transparent 70%),
-              radial-gradient(circle at bottom left, var(--accent-2)20%, transparent 70%),
-              var(--bg);
-}
-.hero h1 {
-  font-size: clamp(28px, 6vw, 48px);
-  margin-bottom: 16px;
-}
-.hero p {
-  font-size: 16px;
-  color: var(--muted);
-}
-
-/* ========== Responsive ========== */
+/* Responsive */
 @media (max-width: 900px) {
-  .hero {
-    padding: 60px 0;
-  }
-  table {
-    font-size: 13px;
-  }
+  table { font-size: 13px; }
 }
 @media (max-width: 600px) {
-  .btn {
-    width: 100%;
-    text-align: center;
-  }
+  .btn { width: 100%; text-align: center; }
 }
