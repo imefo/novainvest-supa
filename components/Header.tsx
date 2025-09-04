@@ -5,7 +5,7 @@ import { useState } from "react";
 export default function Header() {
   const [open, setOpen] = useState(false);
 
-  const LinkItem = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
     <Link href={href} onClick={() => setOpen(false)}>
       {children}
     </Link>
@@ -14,30 +14,41 @@ export default function Header() {
   return (
     <header className="site-header" dir="rtl">
       <div className="container header-inner">
+        {/* برند */}
         <div className="brand">
           <Link href="/">NovaInvest</Link>
         </div>
 
-        <nav className="nav">
-          <LinkItem href="/about">درباره</LinkItem>
-          <LinkItem href="/plans">پلن‌ها</LinkItem>
-          <LinkItem href="/contact">تماس</LinkItem>
-          <LinkItem href="/dashboard">داشبورد</LinkItem>
-          <Link href="/login" className="btn btn-primary">ورود / ثبت‌نام</Link>
+        {/* ناوبری دسکتاپ */}
+        <nav className="nav" aria-label="main">
+          <NavLink href="/about">درباره</NavLink>
+          <NavLink href="/plans">پلن‌ها</NavLink>
+          <NavLink href="/contact">تماس</NavLink>
+          <NavLink href="/dashboard">داشبورد</NavLink>
+          <Link href="/login" className="btn btn-gold" style={{ marginInlineStart: 6 }}>
+            ورود / ثبت‌نام
+          </Link>
         </nav>
 
-        <button className="menu-btn btn" aria-label="menu" onClick={() => setOpen(v => !v)}>
+        {/* دکمهٔ منوی موبایل */}
+        <button
+          className="menu-btn btn"
+          aria-label="menu"
+          aria-expanded={open}
+          onClick={() => setOpen(v => !v)}
+        >
           ☰
         </button>
       </div>
 
+      {/* منوی موبایل */}
       {open && (
-        <div className="container mobile">
-          <LinkItem href="/about">درباره</LinkItem>
-          <LinkItem href="/plans">پلن‌ها</LinkItem>
-          <LinkItem href="/contact">تماس</LinkItem>
-          <LinkItem href="/dashboard">داشبورد</LinkItem>
-          <Link href="/login" className="btn btn-primary btn-block">ورود / ثبت‌نام</Link>
+        <div className="container mobile" role="menu">
+          <NavLink href="/about">درباره</NavLink>
+          <NavLink href="/plans">پلن‌ها</NavLink>
+          <NavLink href="/contact">تماس</NavLink>
+          <NavLink href="/dashboard">داشبورد</NavLink>
+          <Link href="/login" className="btn btn-gold btn-block">ورود / ثبت‌نام</Link>
         </div>
       )}
     </header>
