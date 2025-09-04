@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { isAdmin } from "@/lib/role";
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
@@ -14,7 +13,11 @@ export default function AdminLayout({ children }) {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login"); return; }
-      if (!(await isAdmin(user))) { router.replace("/dashboard"); return; }
+
+      // چک نقش ادمین از طریق RPC
+      const { data, error } = await supabase.rpc("is_admin", { uid: user.id });
+      if (error || !data) { router.replace("/dashboard"); return; }
+
       setOk(true);
     })();
   }, [router]);
