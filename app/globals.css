@@ -1,118 +1,162 @@
-/* =========================
-   Global Theme - NovaInvest
-   ========================= */
-
+/* ==============================
+   پایه
+   ============================== */
 :root {
   --bg: #0b0b0c;
   --fg: #f3f4f6;
-  --muted: #9ca3af;
-  --accent: #7c3aed;
-  --accent-2: #3b82f6;
-  --danger: #ef4444;
-  --success: #22c55e;
-
+  --muted: #cbd5e1;
   --card: rgba(255, 255, 255, 0.06);
   --card-stroke: rgba(255, 255, 255, 0.12);
   --surface: rgba(255, 255, 255, 0.08);
-
-  --radius: 12px;
-  --transition: 0.25s ease;
+  --accent: #fbbf24;
+  --accent-2: #7c3aed;
+  --radius: 16px;
 }
 
-html, body {
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: "Inter", sans-serif;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: var(--bg);
   color: var(--fg);
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Links */
-a {
-  color: inherit;
-  text-decoration: none;
-  transition: var(--transition);
+/* ==============================
+   Hero Section
+   ============================== */
+.home-hero {
+  background: linear-gradient(135deg, #1f1f23, #0d0d0f);
+  color: var(--fg);
+  padding: 80px 20px;
 }
-a:hover { color: var(--accent-2); }
 
-/* Utilities */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: center;
 }
-.muted { color: var(--muted); }
-.accent { color: var(--accent); }
 
-/* Buttons */
-.btn {
-  display: inline-block;
-  padding: 10px 16px;
-  border-radius: var(--radius);
-  border: 1px solid var(--card-stroke);
-  background: var(--surface);
-  color: #fff;
-  font-size: 14px;
-  cursor: pointer;
-  transition: var(--transition);
+.hero-copy h1 {
+  font-size: clamp(28px, 5vw, 42px);
+  line-height: 1.3;
+  margin-bottom: 16px;
 }
-.btn:hover { background: rgba(255, 255, 255, 0.15); }
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  border: none;
-}
-.btn-danger { background: var(--danger); border: none; }
 
-/* Cards */
-.card {
-  background: var(--card);
-  border: 1px solid var(--card-stroke);
+.hero-copy .accent {
+  color: var(--accent);
+}
+
+.hero-bullets {
+  margin-top: 16px;
+  padding-right: 20px;
+  list-style: disc;
+}
+
+.hero-bullets li {
+  margin-bottom: 8px;
+}
+
+/* ==============================
+   Glass Form
+   ============================== */
+.glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius);
   padding: 20px;
   backdrop-filter: blur(12px) saturate(150%);
-  transition: var(--transition);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
-.card:hover { transform: translateY(-2px); border-color: var(--accent); }
 
-/* Forms */
-input, select, textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--radius);
-  border: 1px solid var(--card-stroke);
-  background: var(--card);
-  color: var(--fg);
+.glass-card h3 {
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+.glass-card p {
   font-size: 14px;
-  outline: none;
+  margin-bottom: 12px;
+  color: var(--muted);
 }
-input::placeholder { color: var(--muted); }
-input:focus { border-color: var(--accent-2); }
 
-/* Tables */
-table {
+.glass-card input {
   width: 100%;
-  border-collapse: collapse;
-  background: var(--card);
-  border-radius: var(--radius);
-  overflow: hidden;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
-thead { background: rgba(255, 255, 255, 0.08); }
-th, td {
-  padding: 12px 14px;
-  text-align: right;
-  border-bottom: 1px solid var(--card-stroke);
+
+.glass-card input::placeholder {
+  color: #aaa;
 }
-tr:hover { background: rgba(255, 255, 255, 0.04); }
 
-/* Sections */
-section { margin-bottom: 48px; }
-.section-title { font-size: clamp(22px, 4vw, 32px); margin-bottom: 16px; }
+.tiny {
+  font-size: 12px;
+  color: var(--muted);
+}
 
-/* Responsive */
+/* ==============================
+   Buttons
+   ============================== */
+.btn {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  text-align: center;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border: none;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+/* ==============================
+   Sections
+   ============================== */
+.page-section {
+  padding: 64px 20px;
+}
+
+.section-title {
+  font-size: clamp(22px, 3.6vw, 32px);
+  margin-bottom: 16px;
+}
+
+/* ==============================
+   Responsive
+   ============================== */
 @media (max-width: 900px) {
-  table { font-size: 13px; }
-}
-@media (max-width: 600px) {
-  .btn { width: 100%; text-align: center; }
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .hero-bullets {
+    padding-right: 0;
+    list-style: none;
+  }
+
+  .glass-card {
+    margin: 0 auto;
+    max-width: 400px;
+  }
 }
