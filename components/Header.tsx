@@ -1,75 +1,45 @@
-// components/Header.tsx
 "use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-// مسیر نسبی به lib (یک سطح بالاتر)
-import { supabase } from "../lib/supabaseClient";
-import { useRouter } from "next/navigation";
-
-type SUser = { id: string; email?: string | null };
+import { useState } from "react";
 
 export default function Header() {
-  const router = useRouter();
-  const [user, setUser] = useState<SUser | null>(null);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (mounted) setUser(data.user as SUser | null);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user as SUser | null);
-    });
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setOpen(false);
-    router.replace("/login");
-  };
+  const LinkItem = ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <Link href={href} onClick={() => setOpen(false)}>
+      {children}
+    </Link>
+  );
 
   return (
-    <header className="site-header">
-      <div className="site-header__inner">
-        <Link href="/" className="brand">NovaInvest</Link>
+    <header className="site-header" dir="rtl">
+      <div className="container header-inner">
+        <div className="brand">
+          <Link href="/">NovaInvest</Link>
+        </div>
 
-        <button
-          className="menu-toggle"
-          aria-label="Toggle menu"
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
+        <nav className="nav">
+          <LinkItem href="/about">درباره</LinkItem>
+          <LinkItem href="/plans">پلن‌ها</LinkItem>
+          <LinkItem href="/contact">تماس</LinkItem>
+          <LinkItem href="/dashboard">داشبورد</LinkItem>
+          <Link href="/login" className="btn btn-primary">ورود / ثبت‌نام</Link>
+        </nav>
+
+        <button className="menu-btn btn" aria-label="menu" onClick={() => setOpen(v => !v)}>
           ☰
         </button>
-
-        <nav className={`nav ${open ? "open" : ""}`}>
-          <Link href="/about" onClick={() => setOpen(false)}>About</Link>
-          <Link href="/plans" onClick={() => setOpen(false)}>Plans</Link>
-
-          {!user && <Link href="/login" onClick={() => setOpen(false)}>Sign in</Link>}
-
-          {user && (
-            <>
-              <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
-              <Link href="/admin" onClick={() => setOpen(false)}>Admin</Link>
-              <button
-                onClick={handleSignOut}
-                style={{ background: "transparent", border: 0, cursor: "pointer" }}
-              >
-                Sign out
-              </button>
-            </>
-          )}
-
-          <Link href="/contact" onClick={() => setOpen(false)}>Contact</Link>
-        </nav>
       </div>
+
+      {open && (
+        <div className="container mobile">
+          <LinkItem href="/about">درباره</LinkItem>
+          <LinkItem href="/plans">پلن‌ها</LinkItem>
+          <LinkItem href="/contact">تماس</LinkItem>
+          <LinkItem href="/dashboard">داشبورد</LinkItem>
+          <Link href="/login" className="btn btn-primary btn-block">ورود / ثبت‌نام</Link>
+        </div>
+      )}
     </header>
   );
 }

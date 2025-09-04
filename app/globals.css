@@ -1,162 +1,102 @@
 /* ==============================
-   پایه
+   NovaInvest — Global Modern Theme
+   (Dark + Glassmorphism + RTL-ready)
    ============================== */
-:root {
-  --bg: #0b0b0c;
-  --fg: #f3f4f6;
-  --muted: #cbd5e1;
-  --card: rgba(255, 255, 255, 0.06);
-  --card-stroke: rgba(255, 255, 255, 0.12);
-  --surface: rgba(255, 255, 255, 0.08);
-  --accent: #fbbf24;
-  --accent-2: #7c3aed;
-  --radius: 16px;
+
+/* Colors & tokens */
+:root{
+  --bg:#0b0b0c; --fg:#f3f4f6; --muted:#cbd5e1;
+  --accent:#fbbf24; --accent-2:#7c3aed; --link:#93c5fd;
+  --danger:#ef4444; --success:#22c55e;
+  --card:rgba(255,255,255,.06); --stroke:rgba(255,255,255,.12); --surface:rgba(255,255,255,.08);
+  --radius:14px; --radius-sm:10px; --shadow:0 10px 30px rgba(0,0,0,.35);
+  --t:.25s ease;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* Reset + base */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:Inter,Segoe UI,system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--fg);line-height:1.65;direction:rtl}
+a{color:inherit;text-decoration:none;transition:var(--t)}
+a:hover{color:var(--link)}
+img{max-width:100%;height:auto;display:block}
+.container{max-width:1200px;margin:0 auto;padding:0 20px}
 
-body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--bg);
-  color: var(--fg);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+/* Utilities */
+.muted{color:var(--muted)}
+.accent{color:var(--accent)}
+.center{display:grid;place-items:center}
+.section{padding:64px 0}
+.section-title{font-size:clamp(22px,4vw,32px);margin:0 0 16px}
+
+/* Buttons */
+.btn{display:inline-block;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--stroke);background:var(--surface);color:#fff;cursor:pointer;transition:var(--t);font-weight:600}
+.btn:hover{background:rgba(255,255,255,.14)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none}
+.btn-danger{background:var(--danger);border:none}
+.btn-ghost{background:transparent;border:1px dashed var(--stroke)}
+.btn-block{width:100%;text-align:center}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);padding:18px;backdrop-filter:blur(12px) saturate(140%);box-shadow:var(--shadow);transition:var(--t)}
+.card:hover{transform:translateY(-3px);border-color:var(--accent)}
+
+/* Forms */
+input,select,textarea{width:100%;padding:12px 12px;border-radius:var(--radius-sm);border:1px solid var(--stroke);background:var(--card);color:var(--fg);outline:none;transition:var(--t)}
+input::placeholder,textarea::placeholder{color:#a3a3a3}
+input:focus,select:focus,textarea:focus{border-color:var(--link);background:rgba(255,255,255,.1)}
+.tiny{font-size:12px}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden}
+thead{background:rgba(255,255,255,.08)}
+th,td{padding:12px 14px;text-align:right;border-bottom:1px solid var(--stroke)}
+tr:hover{background:rgba(255,255,255,.05)}
 
 /* ==============================
-   Hero Section
+   Header (Glass Navbar)
    ============================== */
-.home-hero {
-  background: linear-gradient(135deg, #1f1f23, #0d0d0f);
-  color: var(--fg);
-  padding: 80px 20px;
-}
+.site-header{position:sticky;top:0;z-index:50;background:rgba(13,13,15,.55);backdrop-filter:blur(14px) saturate(150%);border-bottom:1px solid var(--stroke)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:60px}
+.brand{font-weight:800;letter-spacing:.3px}
+.nav{display:flex;gap:14px;align-items:center}
+.nav a{padding:8px 10px;border-radius:10px;border:1px solid transparent}
+.nav a:hover{border-color:var(--stroke);background:rgba(255,255,255,.06)}
+.menu-btn{display:none}
 
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  align-items: center;
-}
-
-.hero-copy h1 {
-  font-size: clamp(28px, 5vw, 42px);
-  line-height: 1.3;
-  margin-bottom: 16px;
-}
-
-.hero-copy .accent {
-  color: var(--accent);
-}
-
-.hero-bullets {
-  margin-top: 16px;
-  padding-right: 20px;
-  list-style: disc;
-}
-
-.hero-bullets li {
-  margin-bottom: 8px;
-}
+/* Mobile menu */
+.mobile{display:none;flex-direction:column;gap:8px;padding:10px 0}
+.mobile a{padding:10px;border-radius:10px;border:1px solid var(--stroke);background:rgba(255,255,255,.04)}
 
 /* ==============================
-   Glass Form
+   Hero (two-column)
    ============================== */
-.glass-card {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: var(--radius);
-  padding: 20px;
-  backdrop-filter: blur(12px) saturate(150%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-}
+.hero{position:relative;padding:86px 0 72px;background:
+ radial-gradient(600px 300px at 80% -10%, #7c3aed33 0%, transparent 55%),
+ radial-gradient(700px 360px at -10% 110%, #fbbf2433 0%, transparent 60%),
+ var(--bg)}
+.hero-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:center}
+.hero h1{margin:0 0 12px;font-size:clamp(28px,5.2vw,46px);line-height:1.2}
+.hero .bullets{margin:14px 0 0;padding-right:18px}
+.hero .bullets li{margin-bottom:6px}
+.glass{background:var(--card);border:1px solid var(--stroke);border-radius:20px;padding:20px;backdrop-filter:blur(14px) saturate(160%);box-shadow:var(--shadow)}
 
-.glass-card h3 {
-  margin-bottom: 8px;
-  font-size: 20px;
-}
+/* Features grid */
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feature .icon{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.1);color:var(--accent);margin-bottom:10px}
 
-.glass-card p {
-  font-size: 14px;
-  margin-bottom: 12px;
-  color: var(--muted);
-}
+/* Footer */
+.site-footer{border-top:1px solid var(--stroke);background:#0f0f12}
+.site-footer .inner{height:64px;display:flex;align-items:center;justify-content:space-between}
 
-.glass-card input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
+/* Animations */
+.reveal{opacity:0;transform:translateY(10px);animation:reveal .7s ease forwards}
+@keyframes reveal{to{opacity:1;transform:none}}
 
-.glass-card input::placeholder {
-  color: #aaa;
-}
-
-.tiny {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* ==============================
-   Buttons
-   ============================== */
-.btn {
-  display: inline-block;
-  padding: 10px 16px;
-  border-radius: 8px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 600;
-  text-align: center;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  border: none;
-  color: #fff;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-}
-
-/* ==============================
-   Sections
-   ============================== */
-.page-section {
-  padding: 64px 20px;
-}
-
-.section-title {
-  font-size: clamp(22px, 3.6vw, 32px);
-  margin-bottom: 16px;
-}
-
-/* ==============================
-   Responsive
-   ============================== */
-@media (max-width: 900px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .hero-bullets {
-    padding-right: 0;
-    list-style: none;
-  }
-
-  .glass-card {
-    margin: 0 auto;
-    max-width: 400px;
-  }
+/* Responsive */
+@media (max-width:1000px){.features{grid-template-columns:1fr 1fr}.hero-grid{grid-template-columns:1fr}.hero{padding:64px 0}}
+@media (max-width:720px){
+  .nav{display:none}
+  .menu-btn{display:inline-flex}
+  .mobile{display:flex}
+  .site-footer .inner{flex-direction:column;height:auto;padding:14px 0;gap:8px}
 }
