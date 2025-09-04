@@ -1,49 +1,41 @@
-'use client'
-import { useState } from 'react'
-import { supabase } from '../../lib/supabaseClient'
+"use client";
+export const dynamic = "force-dynamic";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { isAdmin } from "@/lib/role";
 
 export default function AuthDebug() {
-  const [email, setEmail] = useState('admin@nova.local')
-  const [password, setPassword] = useState('Test1234!')
-  const [out, setOut] = useState('')
+  const [user, setUser] = useState(null);
+  const [admin, setAdmin] = useState(null);
 
-  const signIn = async () => {
-    setOut('Signing in...')
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      console.error('LOGIN ERROR:', error)
-      setOut('ERROR: ' + error.message)
-    } else {
-      console.log('LOGIN OK:', data)
-      setOut('OK: ' + (data.session ? 'session created' : 'no session'))
-    }
-  }
-
-  const getUser = async () => {
-    const { data, error } = await supabase.auth.getUser()
-    console.log('GET USER:', data, error)
-    setOut(error ? ('ERROR: ' + error.message) : ('USER: ' + (data?.user?.id || 'no user')))
-  }
-
-  const signOut = async () => {
-    await supabase.auth.signOut()
-    setOut('Signed out')
-  }
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      if (user) setAdmin(await isAdmin(user));
+    })();
+  }, []);
 
   return (
-    <main className="container" style={{padding:20}}>
-      <h1>Auth Debug</h1>
-      <div className="card" style={{maxWidth:520}}>
-        <input placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
-        <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{marginTop:8}} />
-        <div style={{display:'flex',gap:8,marginTop:10}}>
-          <button className="btn primary" onClick={signIn}>Sign In</button>
-          <button className="btn" onClick={getUser}>Get User</button>
-          <button className="btn" onClick={signOut}>Sign Out</button>
+    <section className="section">
+      <div className="container">
+        <div className="card" style={{ padding: 16 }}>
+          <h3 style={{ marginTop: 0 }}>Auth Debug</h3>
+          <pre style={{ whiteSpace: "pre-wrap" }}>
+            {JSON.stringify(
+              {
+                user: user
+                  ? { id: user.id, email: user.email, user_metadata: user.user_metadata }
+                  : null,
+                isAdmin: admin,
+              },
+              null,
+              2
+            )}
+          </pre>
         </div>
-        <p className="muted" style={{marginTop:8,whiteSpace:'pre-wrap'}}>{out}</p>
       </div>
-      <p className="muted">همزمان Console مرورگر را هم باز کن تا جزئیات را ببینی.</p>
-    </main>
-  )
+    </section>
+  );
 }
