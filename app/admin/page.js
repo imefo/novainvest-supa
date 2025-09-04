@@ -7,12 +7,21 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [kyc, setKyc] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [newPlan, setNewPlan] = useState({
+    name: "",
+    description: "",
+    type: "safe",
+    rules: "",
+    profit_percent: "",
+    duration_days: "",
+  });
 
-  // لود اولیه دیتا
   useEffect(() => {
     loadUsers();
     loadTransactions();
     loadKyc();
+    loadPlans();
   }, []);
 
   async function loadUsers() {
@@ -30,7 +39,11 @@ export default function AdminPage() {
     if (!error) setKyc(data);
   }
 
-  // اقدامات روی کاربران
+  async function loadPlans() {
+    const { data, error } = await supabase.from("plans").select("*");
+    if (!error) setPlans(data);
+  }
+
   async function blockUser(id) {
     await supabase.from("users").update({ status: "blocked" }).eq("id", id);
     loadUsers();
@@ -44,7 +57,6 @@ export default function AdminPage() {
     loadUsers();
   }
 
-  // اقدامات روی KYC
   async function approveKyc(id) {
     await supabase.from("kyc_requests").update({ status: "approved" }).eq("id", id);
     loadKyc();
@@ -54,87 +66,77 @@ export default function AdminPage() {
     loadKyc();
   }
 
+  async function addPlan(e) {
+    e.preventDefault();
+    await supabase.from("plans").insert([newPlan]);
+    setNewPlan({ name: "", description: "", type: "safe", rules: "", profit_percent: "", duration_days: "" });
+    loadPlans();
+  }
+
+  async function deletePlan(id) {
+    await supabase.from("plans").delete().eq("id", id);
+    loadPlans();
+  }
+
   return (
     <div style={{ display: "flex", minHeight: "100vh" }} dir="rtl">
-      {/* Sidebar */}
-      <aside style={{ width: 240, background: "rgba(255,255,255,.06)", padding: 20 }} className="glass-card">
+      <aside style={{ width: 240, background: "rgba(255,255,255,.06)", padding: 20 }}>
         <h2 style={{ marginTop: 0 }}>مدیریت</h2>
         <nav style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button className="glass-btn" onClick={() => setActiveTab("dashboard")}>داشبورد</button>
-          <button className="glass-btn" onClick={() => setActiveTab("users")}>کاربران</button>
-          <button className="glass-btn" onClick={() => setActiveTab("transactions")}>تراکنش‌ها</button>
-          <button className="glass-btn" onClick={() => setActiveTab("kyc")}>احراز هویت</button>
+          <button onClick={() => setActiveTab("dashboard")}>داشبورد</button>
+          <button onClick={() => setActiveTab("users")}>کاربران</button>
+          <button onClick={() => setActiveTab("transactions")}>تراکنش‌ها</button>
+          <button onClick={() => setActiveTab("kyc")}>احراز هویت</button>
+          <button onClick={() => setActiveTab("plans")}>پلن‌ها</button>
         </nav>
       </aside>
 
-      {/* Content */}
       <main style={{ flex: 1, padding: 24 }}>
         {activeTab === "dashboard" && (
           <section>
             <h1>داشبورد</h1>
-            <p>تعداد کاربران: {users.length}</p>
-            <p>تعداد تراکنش‌ها: {transactions.length}</p>
-            <p>درخواست‌های KYC: {kyc.length}</p>
+            <p>کاربران: {users.length}</p>
+            <p>تراکنش‌ها: {transactions.length}</p>
+            <p>KYC‌ها: {kyc.length}</p>
+            <p>پلن‌ها: {plans.length}</p>
           </section>
         )}
 
-        {activeTab === "users" && (
+        {activeTab === "plans" && (
           <section>
-            <h1>کاربران</h1>
-            <table className="glass-card" style={{ width: "100%", padding: 12 }}>
+            <h1>مدیریت پلن‌ها</h1>
+            <form onSubmit={addPlan} style={{ marginBottom: 20 }}>
+              <input placeholder="نام پلن" value={newPlan.name} onChange={e => setNewPlan({...newPlan, name: e.target.value})} required />
+              <input placeholder="توضیحات" value={newPlan.description} onChange={e => setNewPlan({...newPlan, description: e.target.value})} />
+              <select value={newPlan.type} onChange={e => setNewPlan({...newPlan, type: e.target.value})}>
+                <option value="safe">امن</option>
+                <option value="balanced">متعادل</option>
+                <option value="risky">ریسکی</option>
+              </select>
+              <input placeholder="قوانین" value={newPlan.rules} onChange={e => setNewPlan({...newPlan, rules: e.target.value})} />
+              <input type="number" placeholder="درصد سود" value={newPlan.profit_percent} onChange={e => setNewPlan({...newPlan, profit_percent: e.target.value})} required />
+              <input type="number" placeholder="مدت زمان (روز)" value={newPlan.duration_days} onChange={e => setNewPlan({...newPlan, duration_days: e.target.value})} required />
+              <button type="submit">افزودن پلن</button>
+            </form>
+
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr><th>ایمیل</th><th>وضعیت</th><th>اقدامات</th></tr>
+                <tr><th>نام</th><th>نوع</th><th>سود</th><th>مدت</th><th>اقدامات</th></tr>
               </thead>
               <tbody>
-                {users.map(u => (
-                  <tr key={u.id}>
-                    <td>{u.email}</td>
-                    <td>{u.status}</td>
+                {plans.map(p => (
+                  <tr key={p.id}>
+                    <td>{p.name}</td>
+                    <td>{p.type}</td>
+                    <td>{p.profit_percent}%</td>
+                    <td>{p.duration_days} روز</td>
                     <td>
-                      <button className="glass-btn" onClick={() => blockUser(u.id)}>مسدود</button>
-                      <button className="glass-btn" onClick={() => unblockUser(u.id)}>آنبلاک</button>
-                      <button className="glass-btn" onClick={() => deleteUser(u.id)}>حذف</button>
+                      <button onClick={() => deletePlan(p.id)}>حذف</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </section>
-        )}
-
-        {activeTab === "transactions" && (
-          <section>
-            <h1>تراکنش‌ها</h1>
-            <table className="glass-card" style={{ width: "100%", padding: 12 }}>
-              <thead>
-                <tr><th>کاربر</th><th>مبلغ</th><th>نوع</th><th>وضعیت</th></tr>
-              </thead>
-              <tbody>
-                {transactions.map(t => (
-                  <tr key={t.id}>
-                    <td>{t.email}</td>
-                    <td>{t.amount}</td>
-                    <td>{t.type}</td>
-                    <td>{t.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        )}
-
-        {activeTab === "kyc" && (
-          <section>
-            <h1>احراز هویت</h1>
-            {kyc.map(req => (
-              <div key={req.id} className="glass-card" style={{ padding: 12, marginBottom: 10 }}>
-                <p>کاربر: {req.email}</p>
-                <p>مدرک: <a href={req.document_url} target="_blank">مشاهده</a></p>
-                <p>وضعیت: {req.status}</p>
-                <button className="glass-btn glass-btn--primary" onClick={() => approveKyc(req.id)}>تأیید</button>
-                <button className="glass-btn glass-btn--ghost" onClick={() => rejectKyc(req.id)}>رد</button>
-              </div>
-            ))}
           </section>
         )}
       </main>
