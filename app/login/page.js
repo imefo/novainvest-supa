@@ -8,7 +8,7 @@ export default function LoginPage() {
   const onSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
-    // TODO: اینجا لاجیک واقعی لاگین با Supabase رو وصل کن
+    // TODO: اینجا لاگین Supabase
     setTimeout(() => setLoading(false), 800);
   };
 
@@ -16,22 +16,14 @@ export default function LoginPage() {
     <section
       className="section"
       style={{
-        minHeight: "calc(100dvh - 64px - 80px)", // قد هدر و فوتر
+        minHeight: "calc(100dvh - 64px - 80px)",
         display: "grid",
         placeItems: "center",
         paddingTop: 32,
         paddingBottom: 32,
       }}
     >
-      <div
-        className="card"
-        style={{
-          width: "100%",
-          maxWidth: 520,
-          padding: 24,
-          borderRadius: 20,
-        }}
-      >
+      <div className="card" style={{ width: "100%", maxWidth: 520, padding: 24, borderRadius: 20 }}>
         <h1 style={{ margin: 0, marginBottom: 6, fontSize: 24 }}>ورود به حساب</h1>
         <p className="muted" style={{ marginTop: 0, marginBottom: 14 }}>
           ایمیل و رمز عبور خود را وارد کنید.
@@ -41,9 +33,7 @@ export default function LoginPage() {
           <label className="tiny" htmlFor="email">ایمیل</label>
           <input id="email" type="email" placeholder="example@email.com" />
 
-          <label className="tiny" htmlFor="pass" style={{ marginTop: 10 }}>
-            رمز عبور
-          </label>
+          <label className="tiny" htmlFor="pass" style={{ marginTop: 10 }}>رمز عبور</label>
           <input id="pass" type="password" placeholder="••••••••" />
 
           <button className="btn btn-gold btn-block" type="submit" style={{ marginTop: 12 }}>
@@ -51,9 +41,12 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="tiny" style={{ textAlign: "center", marginTop: 12 }}>
-          حساب ندارید؟ <Link href="/login?signup=1">ثبت‌نام</Link>
-        </p>
+        <div className="tiny" style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+          <span>
+            حساب ندارید؟ <Link href="/signup">ثبت‌نام</Link>
+          </span>
+          <Link href="/forgot">فراموشی رمز؟</Link>
+        </div>
       </div>
     </section>
   );
