@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { isAdmin } from "@/lib/role";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,9 +21,13 @@ export default function LoginPage() {
     const password = e.currentTarget.pass.value;
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      router.push("/dashboard");
+
+      const user = data.user;
+      const admin = await isAdmin(user);
+
+      router.replace(admin ? "/admin" : "/dashboard");
     } catch (er) {
       setErr(er.message || "مشکلی پیش آمده.");
     } finally {
