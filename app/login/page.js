@@ -1,43 +1,59 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient"; // اگر مسیر lib فرق دارد، تغییر بده
+import { useState } from "react";
 
-export default function LoginPage(){
-  const [email,setEmail]=useState("");
-  const [pass,setPass]=useState("");
-  const [loading,setLoading]=useState(false);
-  const [err,setErr]=useState(null);
-  const router = useRouter();
+export default function LoginPage() {
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = async (e)=>{
-    e.preventDefault(); setErr(null); setLoading(true);
-    try{
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) throw error;
-      router.push("/dashboard");
-    }catch(ex){ setErr(ex.message || "خطا در ورود"); }
-    finally{ setLoading(false); }
+  const onSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    // TODO: اینجا لاجیک واقعی لاگین با Supabase رو وصل کن
+    setTimeout(() => setLoading(false), 800);
   };
 
   return (
-    <section className="section" dir="rtl">
-      <div className="container">
-        <h1 className="section-title">ورود به حساب</h1>
-        <form className="glass-card form" onSubmit={onSubmit}>
-          {err && <p className="muted" style={{color:"#fca5a5"}}>{err}</p>}
-          <label>ایمیل</label>
-          <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
-          <label style={{marginTop:10}}>رمز عبور</label>
-          <input className="input" type="password" value={pass} onChange={e=>setPass(e.target.value)} required />
-          <button className="glass-btn glass-btn--primary" style={{marginTop:14}} disabled={loading}>
+    <section
+      className="section"
+      style={{
+        minHeight: "calc(100dvh - 64px - 80px)", // قد هدر و فوتر
+        display: "grid",
+        placeItems: "center",
+        paddingTop: 32,
+        paddingBottom: 32,
+      }}
+    >
+      <div
+        className="card"
+        style={{
+          width: "100%",
+          maxWidth: 520,
+          padding: 24,
+          borderRadius: 20,
+        }}
+      >
+        <h1 style={{ margin: 0, marginBottom: 6, fontSize: 24 }}>ورود به حساب</h1>
+        <p className="muted" style={{ marginTop: 0, marginBottom: 14 }}>
+          ایمیل و رمز عبور خود را وارد کنید.
+        </p>
+
+        <form onSubmit={onSubmit}>
+          <label className="tiny" htmlFor="email">ایمیل</label>
+          <input id="email" type="email" placeholder="example@email.com" />
+
+          <label className="tiny" htmlFor="pass" style={{ marginTop: 10 }}>
+            رمز عبور
+          </label>
+          <input id="pass" type="password" placeholder="••••••••" />
+
+          <button className="btn btn-gold btn-block" type="submit" style={{ marginTop: 12 }}>
             {loading ? "در حال ورود..." : "ورود"}
           </button>
-          <p className="muted" style={{marginTop:10}}>
-            حساب ندارید؟ <Link href="/login/register" className="glass-btn glass-btn--ghost">ثبت‌نام</Link>
-          </p>
         </form>
+
+        <p className="tiny" style={{ textAlign: "center", marginTop: 12 }}>
+          حساب ندارید؟ <Link href="/login?signup=1">ثبت‌نام</Link>
+        </p>
       </div>
     </section>
   );
