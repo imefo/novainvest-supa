@@ -1,31 +1,73 @@
 "use client";
-import Link from "next/link";
 
-const plans = [
-  { id:"safe", title:"امن", price:"۱۵٪ سالانه", points:["ریسک پایین","برداشت آسان","پشتیبانی ویژه"] },
-  { id:"balanced", title:"متعادل", price:"۲۵٪ سالانه", points:["ریسک متوسط","تنظیم‌پذیر","گزارش دقیق"] },
-  { id:"growth", title:"رشد", price:"۴۰٪ سالانه", points:["ریسک کنترل‌شده","بازده بالا","داشبورد حرفه‌ای"] },
-  { id:"pro", title:"حرفه‌ای", price:"متغیر", points:["استراتژی‌های پیشرفته","SLA اختصاصی","سرویس مشاوره"] },
-];
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
-export default function PlansPage(){
+export default function PlansPublicPage() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(()=>{
+    (async ()=>{
+      setLoading(true);
+      // فقط پلن‌های فعال را بگیر
+      const { data, error } = await supabase
+        .from("plans")
+        .select("id,name,description,type,profit_percent,duration_days,min_amount,max_amount")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (!error) setRows(data || []);
+      setLoading(false);
+    })();
+  },[]);
+
   return (
-    <section className="section" dir="rtl">
+    <section className="section">
       <div className="container">
-        <h1 className="section-title">پلن‌های قابل انتخاب</h1>
-        <div className="grid-4">
-          {plans.map(p => (
-            <article key={p.id} className="glass-card plan">
-              <div className="badge">{p.title}</div>
-              <div className="price">{p.price}</div>
-              <ul className="muted" style={{paddingInlineStart:18,margin:0}}>
-                {p.points.map((t,i)=><li key={i}>• {t}</li>)}
-              </ul>
-              <Link className="glass-btn glass-btn--primary" href={`/plans/${p.id}`}>انتخاب پلن</Link>
-            </article>
-          ))}
-        </div>
+        <h1 style={{marginBottom:12}}>پلن‌ها</h1>
+
+        {loading ? (
+          <div className="glass card">درحال بارگذاری…</div>
+        ) : rows.length ? (
+          <div className="grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:16}}>
+            {rows.map((p)=>(
+              <div key={p.id} className="glass card">
+                <div className="muted" style={{marginBottom:6}}>{labelType(p.type)}</div>
+                <h3 style={{margin:"0 0 8px 0"}}>{p.name}</h3>
+                {p.description && <p className="muted" style={{marginTop:0}}>{p.description}</p>}
+                <div className="row gap8" style={{marginTop:8,flexWrap:"wrap"}}>
+                  <Badge>سود: {Number(p.profit_percent)}٪</Badge>
+                  <Badge>{p.duration_days} روزه</Badge>
+                  <Badge>حداقل: {Number(p.min_amount).toLocaleString("fa-IR")}</Badge>
+                  {p.max_amount != null && <Badge>حداکثر: {Number(p.max_amount).toLocaleString("fa-IR")}</Badge>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="glass card">فعلاً پلن فعالی موجود نیست.</div>
+        )}
       </div>
     </section>
   );
+}
+
+function Badge({children}) {
+  return <span style={{
+    padding:"4px 8px",
+    borderRadius:8,
+    border:"1px solid rgba(255,255,255,.18)",
+    background:"rgba(255,255,255,.08)",
+    fontSize:12
+  }}>{children}</span>;
+}
+
+function labelType(t) {
+  switch (t) {
+    case "safe": return "ایمن";
+    case "balanced": return "متعادل";
+    case "risky": return "ریسکی";
+    default: return t || "-";
+  }
 }
