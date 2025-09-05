@@ -1,101 +1,124 @@
-'use client'
-export const dynamic = 'force-dynamic'
+"use client";
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { supabase } from '../../lib/supabaseClient'
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+
+const emptyForm = {
+  id: null,
+  name: "",
+  description: "",
+  type: "safe",
+  rules: "",
+  profit_percent: 0,
+  duration_days: 30,
+  min_amount: 0,
+  is_active: true,
+};
 
 export default function AdminPlans() {
-  const router = useRouter()
-  const [ready, setReady] = useState(false)
-  const [err, setErr] = useState('')
-  const [plans, setPlans] = useState([])
-  const [form, setForm] = useState({ title:'', description:'', min_invest:100, profit_percent:12, duration_months:1 })
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return router.replace('/login')
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('user_id', session.user.id)
-          .single()
-        if (error) throw error
-        if (!data?.is_admin) return router.replace('/dashboard')
-        const { data: pl, error: e2 } = await supabase.from('plans').select('*').order('created_at', { ascending:false })
-        if (e2) throw e2
-        if (mounted) { setPlans(pl || []); setReady(true) }
-      } catch (e) {
-        if (mounted) setErr(e.message || 'خطا')
-      }
-    })()
-    return () => { mounted = false }
-  }, [router])
-
-  const onSubmit = async e => {
-    e.preventDefault()
-    try {
-      const { data, error } = await supabase.from('plans').insert({
-        title: form.title,
-        description: form.description,
-        min_invest: Number(form.min_invest),
-        profit_percent: Number(form.profit_percent),
-        duration_months: Number(form.duration_months)
-      }).select().single()
-      if (error) throw error
-      setPlans(p => [data, ...p])
-      setForm({ title:'', description:'', min_invest:100, profit_percent:12, duration_months:1 })
-    } catch (e) { setErr(e.message) }
+  async function load() {
+    const { data } = await supabase
+      .from("plans")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    setItems(data || []);
   }
 
-  if (err) return <main className="container"><p className="error">خطا: {err}</p></main>
-  if (!ready) return <main className="container"><p>در حال بارگذاری…</p></main>
+  useEffect(() => { load(); }, []);
+
+  function editRow(row) {
+    setForm({ ...row });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function submit(e) {
+    e.preventDefault();
+    setLoading(true);
+    const payload = { ...form };
+    if (payload.id) {
+      const { error } = await supabase.from("plans").update(payload).eq("id", payload.id);
+      if (!error) setForm(emptyForm);
+    } else {
+      const { error } = await supabase.from("plans").insert(payload);
+      if (!error) setForm(emptyForm);
+    }
+    setLoading(false);
+    load();
+  }
+
+  async function remove(id) {
+    if (!confirm("حذف پلن؟")) return;
+    await supabase.from("plans").delete().eq("id", id);
+    load();
+  }
 
   return (
-    <main className="container">
-      <h1>مدیریت پلن‌ها</h1>
+    <div className="stack gap16">
+      <h1>پلن‌ها</h1>
 
-      <form onSubmit={onSubmit} className="card" style={{maxWidth:720}}>
-        <div className="grid2">
-          <label>نام پلن
-            <input value={form.title} onChange={e=>setForm({...form, title:e.target.value})} required />
-          </label>
-          <label>حداقل سرمایه ($)
-            <input type="number" min="1" value={form.min_invest} onChange={e=>setForm({...form, min_invest:e.target.value})} required />
-          </label>
-          <label>درصد سود ماهانه (%)
-            <input type="number" min="0" value={form.profit_percent} onChange={e=>setForm({...form, profit_percent:e.target.value})} required />
-          </label>
-          <label>مدت (ماه)
-            <input type="number" min="1" value={form.duration_months} onChange={e=>setForm({...form, duration_months:e.target.value})} required />
+      <form onSubmit={submit} className="glass card stack gap12">
+        <div className="row gap12">
+          <input className="input" placeholder="نام پلن" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+          <select className="input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+            <option value="safe">ایمن</option>
+            <option value="balanced">متعادل</option>
+            <option value="risky">ریسکی</option>
+          </select>
+          <label className="row center gap6">
+            <input type="checkbox" checked={form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked })} />
+            فعال
           </label>
         </div>
-        <label>توضیحات
-          <textarea rows={4} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
-        </label>
-        <button type="submit">افزودن پلن</button>
+
+        <textarea className="input" rows={3} placeholder="توضیحات"
+          value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+
+        <textarea className="input" rows={2} placeholder="قوانین"
+          value={form.rules} onChange={e => setForm({ ...form, rules: e.target.value })} />
+
+        <div className="row gap12">
+          <input type="number" className="input" placeholder="درصد سود"
+            value={form.profit_percent} onChange={e => setForm({ ...form, profit_percent: Number(e.target.value) })} />
+          <input type="number" className="input" placeholder="مدت (روز)"
+            value={form.duration_days} onChange={e => setForm({ ...form, duration_days: Number(e.target.value) })} />
+          <input type="number" className="input" placeholder="حداقل مبلغ"
+            value={form.min_amount} onChange={e => setForm({ ...form, min_amount: Number(e.target.value) })} />
+        </div>
+
+        <div className="row gap8">
+          <button className="btn-primary" disabled={loading}>{form.id ? "ذخیره تغییرات" : "ایجاد پلن"}</button>
+          {form.id && (
+            <button type="button" className="btn" onClick={() => setForm(emptyForm)}>انصراف</button>
+          )}
+        </div>
       </form>
 
-      <h2 style={{marginTop:24}}>فهرست پلن‌ها</h2>
-      <div className="grid3">
-        {plans.map(p=>(
-          <div className="card" key={p.id}>
-            <h3>{p.title}</h3>
-            <p style={{opacity:.8}}>{p.description}</p>
-            <ul className="list" style={{fontSize:14,opacity:.9}}>
-              <li>حداقل سرمایه: ${p.min_invest}</li>
-              <li>سود ماهانه: {p.profit_percent}%</li>
-              <li>مدت: {p.duration_months} ماه</li>
-            </ul>
-            <Link href={`/plans/${p.id}`} className="btn">مشاهده</Link>
+      <div className="glass card">
+        <div className="table">
+          <div className="thead">
+            <div>نام</div><div>نوع</div><div>سود٪</div><div>مدت</div><div>حداقل</div><div>وضعیت</div><div>اعمال</div>
           </div>
-        ))}
+          {items.map(p => (
+            <div key={p.id} className="trow">
+              <div>{p.name}</div>
+              <div>{p.type}</div>
+              <div>{p.profit_percent}</div>
+              <div>{p.duration_days} روز</div>
+              <div>{p.min_amount}</div>
+              <div>{p.is_active ? "فعال" : "غیرفعال"}</div>
+              <div className="row gap8">
+                <button className="btn" onClick={() => editRow(p)}>ویرایش</button>
+                <button className="btn" onClick={() => remove(p.id)}>حذف</button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <p style={{marginTop:24}}><Link href="/admin">بازگشت به ادمین</Link></p>
-    </main>
-  )
+    </div>
+  );
 }

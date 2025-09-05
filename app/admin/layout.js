@@ -1,34 +1,68 @@
 "use client";
-export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentUser, checkIsAdmin } from "@/lib/role";
+
+const NAV = [
+  { href: "/admin", label: "نمای کلی" },
+  { href: "/admin/users", label: "کاربران" },
+  { href: "/admin/plans", label: "پلن‌ها" },
+  { href: "/admin/transactions", label: "تراکنش‌ها" },
+  { href: "/admin/kyc", label: "احراز هویت" },
+  { href: "/dashboard", label: "خروج از ادمین" },
+];
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/login"); return; }
-
-      // چک نقش ادمین از طریق RPC
-      const { data, error } = await supabase.rpc("is_admin", { uid: user.id });
-      if (error || !data) { router.replace("/dashboard"); return; }
-
+      const { user } = await getCurrentUser();
+      if (!user) {
+        router.replace("/login?next=/admin");
+        return;
+      }
+      const { isAdmin } = await checkIsAdmin(user.id);
+      if (!isAdmin) {
+        router.replace("/dashboard");
+        return;
+      }
       setOk(true);
     })();
   }, [router]);
 
   if (!ok) {
     return (
-      <section className="section" style={{ minHeight:"calc(100dvh - 64px - 80px)", display:"grid", placeItems:"center" }}>
-        <div className="card">بررسی دسترسی ادمین…</div>
-      </section>
+      <div className="admin-shell">
+        <div className="admin-content">
+          <div className="glass card">در حال بررسی دسترسی…</div>
+        </div>
+      </div>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="admin-shell">
+      <aside className="admin-sidebar glass">
+        <Link href="/" className="brand-home">🏠 NovaInvest</Link>
+        <nav className="admin-nav">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`admin-link ${pathname === item.href ? "active" : ""}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+      <main className="admin-content">{children}</main>
+    </div>
+  );
 }
