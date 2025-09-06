@@ -1,51 +1,64 @@
-// app/admin/layout.js
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { isAdminFast } from "@/lib/role";
 
 export default function AdminLayout({ children }) {
-  const r = useRouter();
-  const pathname = usePathname();
-  const [ok, setOk] = useState(false);
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     let alive = true;
+
     (async () => {
       const { data } = await supabase.auth.getSession();
-      const uid = data?.session?.user?.id || null;
-      if (!uid) {
-        r.replace("/login?next=" + encodeURIComponent(pathname));
-        return;
-      }
-      const admin = await isAdminFast(uid);
-      if (!admin) {
-        r.replace("/dashboard");
-        return;
-      }
-      if (alive) setOk(true);
-    })();
+      const uid = data?.session?.user?.id;
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => {
-      const u = sess?.user;
-      if (!u) r.replace("/login");
-    });
+      // اگر لاگین نیست → به login
+      if (!uid) {
+        router.replace("/login?next=/admin");
+        if (alive) setChecking(false);
+        return;
+      }
+
+      // چک ادمین با timeout
+      const timer = setTimeout(() => {
+        if (alive) {
+          setAllowed(false);
+          setChecking(false);
+          router.replace("/dashboard"); // گیر نکنه
+        }
+      }, 4000);
+
+      try {
+        const ok = await isAdminFast(uid);
+        if (alive) {
+          setAllowed(!!ok);
+          setChecking(false);
+          if (!ok) router.replace("/dashboard");
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    })();
 
     return () => {
       alive = false;
-      sub?.subscription?.unsubscribe();
     };
-  }, [r, pathname]);
+  }, [router]);
 
-  // نکته: هیچ متن طولانی لودینگ نشون نمی‌دیم
-  if (!ok) return null;
+  if (checking) {
+    return (
+      <div className="nv-container" style={{ paddingTop: 40 }}>
+        <div className="card">در حال بررسی دسترسی ادمین…</div>
+      </div>
+    );
+  }
 
-  return (
-    <section className="nv-admin-wrap">
-      {children}
-    </section>
-  );
+  if (!allowed) return null;
+
+  return <>{children}</>;
 }
