@@ -1,4 +1,3 @@
-// app/plans/page.js
 "use client";
 export const dynamic = "force-dynamic";
 
@@ -19,30 +18,37 @@ export default function PlansPublicPage() {
           .eq("is_active", true)
           .order("created_at", { ascending: false });
         if (error) throw error;
-        if (!ignore) setRows(data ?? []);
-      } catch {
+        if (!ignore) setRows(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("plans load error:", e);
         if (!ignore) setErr("خطا در دریافت پلن‌ها");
       }
     })();
     return () => { ignore = true; };
   }, []);
 
+  const fmtNum = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "0";
+    try { return n.toLocaleString("fa-IR"); } catch { return String(n); }
+  };
+
   return (
-    <section>
-      <h1 className="section-title">پلن‌های فعال</h1>
+    <section dir="rtl">
+      <h1>پلن‌های فعال</h1>
       {err ? <div className="err">{err}</div> : null}
       <div className="plans-grid">
         {rows.map((p) => (
-          <div key={p.id} className="card">
-            <h3 style={{ marginTop: 0 }}>{p.name}</h3>
-            <div className="muted" style={{ marginBottom: 6 }}>{p.type}</div>
-            <p>{p.description}</p>
+          <div key={p?.id || Math.random()} className="card">
+            <h3>{p?.name ?? "بدون نام"}</h3>
+            <div className="muted">{p?.type ?? "-"}</div>
+            <p>{p?.description ?? ""}</p>
             <div className="muted">
-              سود: {p.profit_percent}% • مدت: {p.duration_days} روز • حداقل: {Number(p.min_amount || 0).toLocaleString()}
+              سود: {fmtNum(p?.profit_percent)}% • مدت: {fmtNum(p?.duration_days)} روز • حداقل: {fmtNum(p?.min_amount)}
             </div>
           </div>
         ))}
-        {rows.length === 0 && <div className="muted">پلنی موجود نیست.</div>}
+        {rows.length === 0 && !err && <div className="muted">پلن فعالی موجود نیست.</div>}
       </div>
     </section>
   );
