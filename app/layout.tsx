@@ -1,13 +1,13 @@
-// app/layout.tsx
+// app/layout.js
 import "./globals.css";
 import Header from "@/components/Header";
 
 export const metadata = {
-  title: "NovaInvest",
-  description: "سرمایه‌گذاری هوشمند، شفاف و سریع",
+  title: "NovaInvest — هوشمند، شفاف، سریع",
+  description: "پلتفرم سرمایه‌گذاری با پلن‌های امن، متعادل و ریسکی",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }) {
   return (
     <html lang="fa" dir="rtl">
       <body>

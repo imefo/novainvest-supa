@@ -1,87 +1,55 @@
+// app/login/page.js
 "use client";
+export const dynamic = "force-dynamic";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { isAdminFast } from "@/lib/role";
+import { useRouter } from "next/navigation";
 
-function LoginInner() {
-  const router = useRouter();
-  const params = useSearchParams();
-
+export default function LoginPage() {
+  const r = useRouter();
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
-  const [err, setErr] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  // اگر لاگین است، بفرست به داشبورد (ادمین لینک بالاست)
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) {
-        const next = params.get("next");
-        router.replace(next || "/dashboard");
-      }
-    })();
-  }, [router, params]);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
-    setErr(null);
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password: pass,
-    });
-    setLoading(false);
+    setErr("");
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: pass,
+      });
+      if (error) throw error;
 
-    if (error) {
-      setErr(error.message);
-      return;
+      const uid = data?.user?.id;
+      let to = "/dashboard";
+      if (uid) {
+        const ok = await isAdminFast(uid, 2500);
+        if (ok) to = "/admin";
+      }
+      r.replace(to);
+    } catch (e) {
+      setErr(e?.message || "خطا در ورود");
+    } finally {
+      setBusy(false);
     }
-    const next = params.get("next");
-    router.replace(next || "/dashboard");
   }
 
   return (
-    <section className="section">
-      <div className="container">
-        <form onSubmit={onSubmit} className="glass card stack gap12" style={{maxWidth:420, margin:"40px auto"}}>
-          <h2 style={{margin:"0 0 6px 0"}}>ورود</h2>
-          {err && <div className="alert">{err}</div>}
-
-          <input
-            className="input"
-            type="email"
-            placeholder="ایمیل"
-            value={email}
-            onChange={(e)=>setEmail(e.target.value)}
-            required
-          />
-          <input
-            className="input"
-            type="password"
-            placeholder="رمز عبور"
-            value={pass}
-            onChange={(e)=>setPass(e.target.value)}
-            required
-          />
-
-          <button className="btn-primary" disabled={loading}>{loading ? "…" : "ورود"}</button>
-
-          <div className="row gap8 muted" style={{justifyContent:"space-between"}}>
-            <a href="/forgot">فراموشی رمز</a>
-            <a href="/signup">حساب ندارید؟ ثبت‌نام</a>
-          </div>
-        </form>
-      </div>
-    </section>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="container"><div className="glass p24">در حال بارگذاری…</div></div>}>
-      <LoginInner />
-    </Suspense>
+    <div className="auth-wrap">
+      <form className="glass-card" onSubmit={onSubmit} style={{ maxWidth: 520, width: "100%" }}>
+        <h1 style={{ marginTop: 0 }}>ورود</h1>
+        <input placeholder="ایمیل" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input placeholder="رمز عبور" type="password" value={pass} onChange={(e) => setPass(e.target.value)} />
+        {err && <div className="err">{err}</div>}
+        <button className="nv-btn nv-btn-primary" disabled={busy}>
+          {busy ? "در حال ورود..." : "ورود"}
+        </button>
+      </form>
+    </div>
   );
 }

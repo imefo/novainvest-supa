@@ -1,94 +1,77 @@
+// components/Header.tsx
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { isAdminFast } from "@/lib/role";
-
-type U = { id: string; email?: string } | null;
+import { getSessionUser, isAdminFast } from "@/lib/role";
 
 export default function Header() {
-  const r = useRouter();
-  const path = usePathname();
-  const [user, setUser] = useState<U>(null);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<null | { id: string; email?: string }>(null);
   const [admin, setAdmin] = useState(false);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let alive = true;
+
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      const u = data?.session?.user ?? null;
-      if (alive) {
-        setUser(u);
+      try {
+        const u = await getSessionUser(3500);
+        if (!alive) return;
+        setUser(u ? { id: u.id, email: u.email || undefined } : null);
         if (u?.id) {
-          const a = await isAdminFast(u.id);
-          if (alive) setAdmin(a);
+          const ok = await isAdminFast(u.id, 3000);
+          if (alive) setAdmin(!!ok);
         }
-        setReady(true);
+      } finally {
+        if (alive) setLoading(false);
       }
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => {
       const u = sess?.user ?? null;
-      setUser(u);
-      if (!u) {
-        setAdmin(false);
-      }
+      setUser(u ? { id: u.id, email: u.email || undefined } : null);
+      if (!u) setAdmin(false);
     });
 
     return () => {
       alive = false;
-      sub?.subscription?.unsubscribe();
+      sub?.subscription?.unsubscribe?.();
     };
   }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    r.push("/?v=now");
-    r.refresh();
+    location.href = "/?v=now";
   };
-
-  // تا آماده نشه، هیچ «متن لودینگ» نشان نده
-  if (!ready) return <div className="nv-header" />;
 
   return (
     <header className="nv-header" dir="rtl">
       <div className="nv-header-inner">
-        {/* چپ */}
         <nav className="nv-nav-left">
-          <Link href="/contact" className="nv-link">تماس</Link>
-          <Link href="/plans" className="nv-link">پلن‌ها</Link>
-          <Link href="/about" className="nv-link">درباره</Link>
+          <Link className="nv-link" href="/contact">تماس</Link>
+          <Link className="nv-link" href="/plans">پلن‌ها</Link>
+          <Link className="nv-link" href="/about">درباره</Link>
         </nav>
 
-        {/* وسط (لوگو/خانه) */}
         <div className="nv-brand">
-          <Link href="/" className="nv-brand-link">
-            <span className="nv-brand-home">🏠</span>
+          <Link className="nv-brand-link" href="/">
+            <span className="nv-brand-home" aria-hidden>🏠</span>
             <strong className="nv-brand-title">NovaInvest</strong>
           </Link>
         </div>
 
-        {/* راست */}
-        <div className="nv-nav-right">
-          {user ? (
+        <nav className="nv-nav-right">
+          {loading ? null : user ? (
             <>
-              {/* وقتی در /admin هستیم، دکمه‌ی “داشبورد” را نشان بده و بالعکس */}
-              {path?.startsWith("/admin") ? (
-                <Link href="/dashboard" className="nv-btn">داشبورد</Link>
-              ) : admin ? (
-                <Link href="/admin" className="nv-btn">ادمین</Link>
-              ) : (
-                <Link href="/dashboard" className="nv-btn">داشبورد</Link>
-              )}
-              <button onClick={signOut} className="nv-btn">خروج</button>
+              <Link className="nv-btn" href="/dashboard">داشبورد</Link>
+              {admin && <Link className="nv-btn" href="/admin">ادمین</Link>}
+              <button className="nv-btn" onClick={signOut}>خروج</button>
             </>
           ) : (
-            <Link href="/login" className="nv-btn nv-btn-primary">ورود / ثبت‌نام</Link>
+            <Link className="nv-btn nv-btn-primary" href="/login">ورود / ثبت‌نام</Link>
           )}
-        </div>
+        </nav>
       </div>
     </header>
   );

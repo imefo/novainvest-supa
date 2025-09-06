@@ -7,41 +7,38 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AdminHome() {
-  const [stats, setStats] = useState({ users: 0, deposits: 0, withdrawals: 0 });
+  const [users, setUsers] = useState<number | null>(null);
 
   useEffect(() => {
     let dead = false;
     (async () => {
       try {
-        // نمونه آمار سبک (در صورت داشتن جداول)
-        const [{ count: users = 0 } = {}] = await Promise.all([
-          supabase.from("profiles").select("id", { count: "exact", head: true })
-        ]);
-        if (!dead) setStats((s) => ({ ...s, users: users || 0 }));
-      } catch (_) {}
+        const { count } = await supabase.from("profiles").select("id", { head: true, count: "exact" });
+        if (!dead) setUsers(count ?? 0);
+      } catch {
+        if (!dead) setUsers(0);
+      }
     })();
     return () => { dead = true; };
   }, []);
 
   return (
-    <div dir="rtl" className="card-glass" style={{ marginTop: 16 }}>
-      <h1 style={{ marginBottom: 10 }}>پنل مدیریت</h1>
-      <p className="muted" style={{ marginBottom: 16 }}>
-        مدیریت کاربران، پلن‌ها، تراکنش‌ها و احراز هویت
-      </p>
+    <div className="card-glass" style={{ marginTop: 16 }}>
+      <h1 style={{ margin: "0 0 8px" }}>پنل مدیریت</h1>
+      <p className="muted" style={{ margin: "0 0 16px" }}>کنترل کاربران، پلن‌ها، تراکنش‌ها و احراز هویت</p>
 
       <div className="admin-grid">
         <Link href="/admin/users" className="card">
           <strong>کاربران</strong>
-          <span className="muted">{stats.users.toLocaleString()} کاربر</span>
+          <span className="muted">{users === null ? "…" : `${users} کاربر`}</span>
         </Link>
         <Link href="/admin/plans" className="card">
           <strong>پلن‌ها</strong>
-          <span className="muted">مدیریت ایجاد/ویرایش/فعال‌سازی</span>
+          <span className="muted">ایجاد / ویرایش / فعال‌سازی</span>
         </Link>
         <Link href="/admin/transactions" className="card">
           <strong>تراکنش‌ها</strong>
-          <span className="muted">واریز/برداشت‌ها، فیلتر و وضعیت</span>
+          <span className="muted">واریز/برداشت و وضعیت</span>
         </Link>
         <Link href="/admin/kyc" className="card">
           <strong>احراز هویت</strong>
