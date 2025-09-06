@@ -2,141 +2,112 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { isAdmin as isAdminFn } from "@/lib/role";
 
-type UserLite = { id: string; email?: string | null } | null;
+type TUser = {
+  id: string;
+  email?: string;
+} | null;
 
 export default function Header() {
-  const [user, setUser] = useState<UserLite>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [open, setOpen] = useState(false);
-  const pathname = usePathname();
+  const [user, setUser] = useState<TUser>(null);
+  const [loading, setLoading] = useState(true);
 
-  // خواندن وضعیت کاربر
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      const u = data?.user ?? null;
-      setUser(u ? { id: u.id, email: u.email } : null);
-      setIsAdmin(u ? await isAdminFn(u.id) : false);
-    })();
+    let mounted = true;
+
+    const load = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      setUser((data?.session?.user as TUser) ?? null);
+      setLoading(false);
+    };
+
+    load();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    return () => {
+      mounted = false;
+      sub?.subscription?.unsubscribe?.();
+    };
   }, []);
 
-  // خروج
-  async function doSignOut() {
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  }
-
-  // لینک‌های ثابت
-  const leftLinks = [
-    { href: "/about", label: "درباره" },
-    { href: "/plans", label: "پلن‌ها" },
-    { href: "/contact", label: "تماس" },
-  ];
-
-  // لینک‌های حساب
-  const accountLinks = user
-    ? [
-        { href: "/dashboard", label: "داشبورد" },
-        ...(isAdmin ? [{ href: "/admin", label: "ادمین" }] : []),
-      ]
-    : [];
-
-  const showAuth = !user; // اگر لاگین نیست دکمه ورود/ثبت‌نام را نشان بده
-
-  // کمک برای هایلایت لینک فعال
-  const isActive = (href: string) =>
-    href === "/"
-      ? pathname === "/"
-      : pathname === href || pathname.startsWith(href + "/");
-
   return (
-    <header className="site-header" dir="rtl">
-      <div className="site-header__inner container">
-        {/* برند (راست) */}
+    <header className="site-header">
+      <div className="site-header__inner">
         <Link href="/" className="brand">
-          <span className="home-icon" aria-hidden>🏠</span>
-          <span className="brand-text">NovaInvest</span>
+          <span className="brand__text">NovaInvest</span>
+          <span className="brand__home" aria-label="خانه">🏠</span>
         </Link>
 
-        {/* ناوبری دسکتاپ */}
-        <nav className="nav hide-on-mobile">
-          <ul className="nav-list">
-            {leftLinks.map((l) => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  className={isActive(l.href) ? "nav-link active" : "nav-link"}
-                >
-                  {l.label}
-                </Link>
-              </li>
-            ))}
+        <nav className="nav">
+          <Link href="/about">درباره</Link>
+          <Link href="/plans">پلن‌ها</Link>
+          <Link href="/contact">تماس</Link>
 
-            {accountLinks.map((l) => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  className={isActive(l.href) ? "nav-link active" : "nav-link"}
-                >
-                  {l.label}
-                </Link>
-              </li>
-            ))}
-
-            {showAuth ? (
-              <li>
-                <Link href="/login" className="btn-primary small">
-                  ورود / ثبت‌نام
-                </Link>
-              </li>
-            ) : (
-              <li>
-                <button onClick={doSignOut} className="btn ghost small">
-                  خروج
-                </button>
-              </li>
-            )}
-          </ul>
-        </nav>
-
-        {/* منوی موبایل */}
-        <button
-          className="hamburger show-on-mobile"
-          aria-label="منو"
-          onClick={() => setOpen((o) => !o)}
-        >
-          ☰
-        </button>
-      </div>
-
-      {/* دراپ‌داون موبایل */}
-      {open && (
-        <div className="mobile-nav show-on-mobile container">
-          {[...leftLinks, ...accountLinks].map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={isActive(l.href) ? "mnav-link active" : "mnav-link"}
-              onClick={() => setOpen(false)}
-            >
-              {l.label}
-            </Link>
-          ))}
-          {showAuth ? (
-            <Link href="/login" className="btn-primary block" onClick={() => setOpen(false)}>
+          {loading ? (
+            <span className="nav__loading" aria-live="polite">…</span>
+          ) : user ? (
+            <>
+              <Link href="/dashboard" className="btn btn-soft">داشبورد</Link>
+              <Link href="/admin" className="btn btn-soft">ادمین</Link>
+              <button
+                className="btn btn-danger"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  if (typeof window !== "undefined") window.location.href = "/";
+                }}
+              >
+                خروج
+              </button>
+            </>
+          ) : (
+            <Link href="/login" className="btn btn-primary">
               ورود / ثبت‌نام
             </Link>
-          ) : (
-            <button onClick={doSignOut} className="btn ghost block">
-              خروج
-            </button>
           )}
-        </div>
-      )}
+        </nav>
+      </div>
+      <div className="site-header__bar" />
+      {/* همان استایل این‌لاین بالا – می‌تونی اگر خواستی برداری به globals.css منتقل کنی */}
+      <style jsx>{`
+        .site-header {
+          position: sticky; top: 0; z-index: 50;
+          backdrop-filter: blur(10px) saturate(140%);
+          background: rgba(10, 12, 22, 0.5);
+          border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+        .site-header__inner {
+          max-width: 1100px; margin: 0 auto; padding: 10px 16px;
+          display: flex; align-items: center; justify-content: space-between;
+          color: #e5e7eb;
+        }
+        .brand { display:flex; gap:8px; align-items:center; text-decoration:none; }
+        .brand__text { font-weight:800; letter-spacing:.3px; color:#e5e7eb; }
+        .brand__home { opacity:.9 }
+        .nav { display:flex; align-items:center; gap:14px; }
+        .nav a { color:#cbd5e1; text-decoration:none; }
+        .nav a:hover { color:#fff; }
+        .nav__loading { opacity:.6; }
+        .btn {
+          padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.14);
+          text-decoration:none;
+        }
+        .btn-soft { background: rgba(255,255,255,.06); color:#e5e7eb; }
+        .btn-soft:hover { background: rgba(255,255,255,.12); }
+        .btn-primary {
+          background: linear-gradient(135deg,#8b5cf6,#3b82f6); border:none; color:white; font-weight:600;
+        }
+        .btn-danger { background:#ef4444; border:none; color:white; }
+        .site-header__bar {
+          height: 2px;
+          background: linear-gradient(90deg,#8b5cf6 0%, #0ea5e9 60%, #f59e0b 100%);
+          opacity:.7;
+        }
+        @media (max-width: 720px) {
+          .nav { gap:10px; }
+          .btn { padding:7px 10px; }
+        }
+      `}</style>
     </header>
   );
 }
