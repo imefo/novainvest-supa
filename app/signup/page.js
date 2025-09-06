@@ -1,68 +1,123 @@
 "use client";
-export const dynamic = "force-dynamic";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
 
-  const onSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setErr(""); setMsg(""); setLoading(true);
-
-    const full_name = e.currentTarget.name.value.trim();
-    const email = e.currentTarget.email.value.trim();
-    const password = e.currentTarget.pass.value;
-
+    setErr("");
+    setOk("");
+    if (!fullName.trim() || !email.trim() || !pwd) {
+      setErr("همه فیلدها را کامل کنید.");
+      return;
+    }
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email, password, options: { data: { full_name } }
+      setLoading(true);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: pwd,
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo:
+            typeof window !== "undefined"
+              ? `${location.origin}/login`
+              : undefined,
+        },
       });
       if (error) throw error;
 
-      if (!data.session) {
-        setMsg("لینک تأیید به ایمیل شما ارسال شد.");
-      } else {
-        router.push("/dashboard");
-      }
-    } catch (er) {
-      setErr(er.message || "ثبت‌نام ناموفق.");
+      setOk(
+        "ثبت‌نام انجام شد! ایمیل خود را برای تأیید بررسی کنید، سپس وارد شوید."
+      );
+      // بعد از چند ثانیه کاربر را به لاگین ببریم
+      setTimeout(() => router.push("/login"), 2200);
+    } catch (e) {
+      setErr(e.message ?? "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <section className="section" style={{ minHeight:"calc(100dvh - 64px - 80px)", display:"grid", placeItems:"center" }}>
-      <div className="card" style={{ width:"100%", maxWidth:560, padding:24, borderRadius:20 }}>
-        <h1 style={{ margin:0, marginBottom:6, fontSize:24 }}>ثبت‌نام</h1>
-        <p className="muted" style={{ marginTop:0, marginBottom:14 }}>حساب جدید بسازید.</p>
+    <main className="nv-container auth-page">
+      <div className="auth-card glass-xl">
+        <div className="auth-head">
+          <h1>ثبت‌نام</h1>
+          <p className="muted">حساب جدید بسازید.</p>
+        </div>
 
-        {err && <div className="card" style={{ borderColor:"rgba(239,68,68,.5)", background:"rgba(239,68,68,.12)", marginBottom:10 }}>{err}</div>}
-        {msg && <div className="card" style={{ borderColor:"rgba(34,197,94,.5)", background:"rgba(34,197,94,.12)", marginBottom:10 }}>{msg}</div>}
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
+          <label className="fld">
+            <span>نام و نام خانوادگی</span>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="مثلاً علی رضایی"
+              dir="rtl"
+            />
+          </label>
 
-        <form onSubmit={onSubmit}>
-          <label className="tiny" htmlFor="name">نام و نام خانوادگی</label>
-          <input id="name" name="name" type="text" placeholder="مثال: علی رضایی" required />
-          <label className="tiny" htmlFor="email" style={{ marginTop:10 }}>ایمیل</label>
-          <input id="email" name="email" type="email" placeholder="example@email.com" required />
-          <label className="tiny" htmlFor="pass" style={{ marginTop:10 }}>رمز عبور</label>
-          <input id="pass" name="pass" type="password" placeholder="حداقل ۸ کاراکتر" required />
-          <button className="btn btn-gold btn-block" type="submit" style={{ marginTop:12 }} disabled={loading}>
-            {loading ? "در حال ساخت حساب..." : "ایجاد حساب"}
+          <label className="fld">
+            <span>ایمیل</span>
+            <input
+              type="email"
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="example@mail.com"
+              dir="ltr"
+            />
+          </label>
+
+          <label className="fld">
+            <span>رمز عبور</span>
+            <div className="pwd-wrap">
+              <input
+                type={showPwd ? "text" : "password"}
+                value={pwd}
+                onChange={(e) => setPwd(e.target.value)}
+                placeholder="حداقل ۸ کاراکتر"
+                dir="ltr"
+              />
+              <button
+                type="button"
+                className="nv-btn nv-btn-ghost pwd-toggle"
+                onClick={() => setShowPwd((s) => !s)}
+                aria-label="نمایش/مخفی کردن رمز"
+              >
+                {showPwd ? "مخفی" : "نمایش"}
+              </button>
+            </div>
+          </label>
+
+          {err ? <p className="alert error">{err}</p> : null}
+          {ok ? <p className="alert ok">{ok}</p> : null}
+
+          <button className="nv-btn nv-btn-primary nv-btn-block" disabled={loading}>
+            {loading ? "در حال ایجاد حساب..." : "ایجاد حساب"}
           </button>
         </form>
 
-        <p className="tiny" style={{ textAlign:"center", marginTop:12 }}>
-          حساب دارید؟ <Link href="/login">ورود</Link>
-        </p>
+        <div className="auth-foot">
+          <span className="muted">حساب دارید؟</span>
+          <Link className="nv-link strong" href="/login">
+            ورود
+          </Link>
+        </div>
       </div>
-    </section>
+    </main>
   );
 }
