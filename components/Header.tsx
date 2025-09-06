@@ -1,61 +1,112 @@
 "use client";
+
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+
+// اگر دوست داری از util خودت استفاده کنی می‌تونی بجاش از lib/role استفاده کنی.
+// اینجا مستقیم RPC is_admin رو صدا می‌زنیم تا وابستگی کمتر باشه.
+
+type SessionUser = { id: string; email?: string | null } | null;
 
 export default function Header() {
-  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<SessionUser>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false); // برای منوی موبایل
 
-  const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <Link href={href} onClick={() => setOpen(false)}>
-      {children}
-    </Link>
-  );
+  useEffect(() => {
+    let ignore = false;
+
+    async function load() {
+      setLoading(true);
+      const { data } = await supabase.auth.getUser();
+      const u = data?.user ?? null;
+      if (!ignore) setUser(u ? { id: u.id, email: u.email } : null);
+
+      // چک ادمین فقط وقتی لاگین بود
+      if (u) {
+        const { data: isAdminResp } = await supabase.rpc("is_admin", { uid: u.id });
+        if (!ignore) setIsAdmin(!!isAdminResp);
+      } else {
+        if (!ignore) setIsAdmin(false);
+      }
+      if (!ignore) setLoading(false);
+    }
+
+    load();
+
+    // گوش دادن به تغییرات auth (لاگین/لاگ‌اوت)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, _session) => {
+      load();
+    });
+
+    return () => {
+      ignore = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    // برگرد به صفحه اصلی
+    window.location.href = "/";
+  }
 
   return (
-    <header className="site-header" dir="rtl">
-      <div className="container header-inner">
-        {/* برند + خانه */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }} className="brand">
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* آیکن خانه */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M3 11.5 12 4l9 7.5V20a2 2 0 0 1-2 2h-4.5v-6h-5v6H5a2 2 0 0 1-2-2v-8.5Z"
-                stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>NovaInvest</span>
+    <header className="site-header">
+      <div className="container row between center">
+        <div className="row center gap12">
+          <Link href="/" className="brand">
+            <span className="brand-logo">🏠</span>
+            <span className="brand-text">NovaInvest</span>
           </Link>
+
+          {/* لینک‌های سمت چپ (دسکتاپ) */}
+          <nav className="nav-links hide-sm">
+            <Link href="/plans">Plans</Link>
+            <Link href="/about">About</Link>
+            <Link href="/contact">Contact</Link>
+            {/* همیشه Dashboard برای لاگین‌شده‌ها */}
+            {user && <Link href="/dashboard">Dashboard</Link>}
+            {/* فقط ادمین‌ها: لینک Admin همزمان با Dashboard */}
+            {user && isAdmin && <Link href="/admin">Admin</Link>}
+          </nav>
         </div>
 
-        {/* ناوبری دسکتاپ */}
-        <nav className="nav" aria-label="main">
-          <NavLink href="/about">درباره</NavLink>
-          <NavLink href="/plans">پلن‌ها</NavLink>
-          <NavLink href="/contact">تماس</NavLink>
-          <NavLink href="/dashboard">داشبورد</NavLink>
-          <Link href="/login" className="btn btn-gold" style={{ marginInlineStart: 6 }}>
-            ورود / ثبت‌نام
-          </Link>
-        </nav>
+        {/* اکشن‌های سمت راست */}
+        <div className="row center gap8">
+          {loading ? (
+            <span className="muted">…</span>
+          ) : user ? (
+            <>
+              <span className="muted hide-sm">{user.email ?? "User"}</span>
+              <button className="btn" onClick={signOut}>خروج</button>
+            </>
+          ) : (
+            <>
+              <Link className="btn" href="/login">ورود</Link>
+              <Link className="btn" href="/signup">ثبت‌نام</Link>
+            </>
+          )}
 
-        {/* منوی موبایل */}
-        <button
-          className="menu-btn btn"
-          aria-label="menu"
-          aria-expanded={open}
-          onClick={() => setOpen(v => !v)}
-        >
-          ☰
-        </button>
+          {/* دکمه موبایل */}
+          <button className="btn icon hide-md-up" onClick={() => setOpen(v => !v)} aria-label="menu">
+            ☰
+          </button>
+        </div>
       </div>
 
+      {/* منوی موبایل */}
       {open && (
-        <div className="container mobile" role="menu">
-          <NavLink href="/about">درباره</NavLink>
-          <NavLink href="/plans">پلن‌ها</NavLink>
-          <NavLink href="/contact">تماس</NavLink>
-          <NavLink href="/dashboard">داشبورد</NavLink>
-          <Link href="/login" className="btn btn-gold btn-block">ورود / ثبت‌نام</Link>
+        <div className="mobile-nav">
+          <Link href="/plans" onClick={()=>setOpen(false)}>Plans</Link>
+          <Link href="/about" onClick={()=>setOpen(false)}>About</Link>
+          <Link href="/contact" onClick={()=>setOpen(false)}>Contact</Link>
+          {user && <Link href="/dashboard" onClick={()=>setOpen(false)}>Dashboard</Link>}
+          {user && isAdmin && <Link href="/admin" onClick={()=>setOpen(false)}>Admin</Link>}
         </div>
       )}
     </header>
