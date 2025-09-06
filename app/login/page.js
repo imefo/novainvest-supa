@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function LoginPage() {
+function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
+
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // اگر لاگین است، مستقیم به dashboard (می‌تونه از هدر بره admin)
+  // اگر لاگین است، بفرست به داشبورد (ادمین لینک بالاست)
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
@@ -27,14 +28,16 @@ export default function LoginPage() {
     e.preventDefault();
     setErr(null);
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password: pass,
+    });
     setLoading(false);
 
     if (error) {
       setErr(error.message);
       return;
     }
-    // بعد از لاگین: همه به /dashboard
     const next = params.get("next");
     router.replace(next || "/dashboard");
   }
@@ -67,10 +70,18 @@ export default function LoginPage() {
 
           <div className="row gap8 muted" style={{justifyContent:"space-between"}}>
             <a href="/forgot">فراموشی رمز</a>
-            <a href="/signup">هنوز حساب نداری؟</a>
+            <a href="/signup">حساب ندارید؟ ثبت‌نام</a>
           </div>
         </form>
       </div>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="container"><div className="glass p24">در حال بارگذاری…</div></div>}>
+      <LoginInner />
+    </Suspense>
   );
 }
