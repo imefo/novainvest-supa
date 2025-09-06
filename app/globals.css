@@ -196,3 +196,54 @@ textarea.input{padding:10px}
   .mobile-nav a{color:#e5e7eb;text-decoration:none;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.1)}
   .mobile-nav a:last-child{border-bottom:none}
 }
+/* ==== Header (glass, sticky, RTL) ==== */
+.site-header{
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(18,20,34,.55);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.site-header .container{ max-width: 1100px; margin: 0 auto; padding: 10px 16px; }
+.site-header__inner{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+
+.brand { display:flex; align-items:center; gap:8px; text-decoration:none; }
+.home-icon{ font-size:18px; line-height:1; }
+.brand-text{ font-weight:800; letter-spacing:.2px; color:#e9eaf5; }
+
+.nav-list{ display:flex; align-items:center; gap:14px; list-style:none; margin:0; padding:0; }
+.nav-link{
+  display:inline-block; padding:8px 10px; border-radius:10px; text-decoration:none;
+  color:#cfd3e6; border:1px solid transparent;
+}
+.nav-link:hover{ background:rgba(255,255,255,.06); color:#fff; }
+.nav-link.active{ border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.08); color:#fff; }
+
+.btn, .btn-primary{
+  display:inline-block; padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.10); color:#fff; cursor:pointer; text-decoration:none;
+}
+.btn:hover{ background: rgba(255,255,255,.16); }
+.btn.ghost{ background: transparent; }
+.btn.small, .btn-primary.small{ padding:6px 10px; font-size: 14px; }
+
+.btn-primary{ background: linear-gradient(135deg,#7c3aed,#3b82f6); border: none; }
+
+.hamburger{ display:none; font-size:22px; line-height:1; background:transparent; border:none; color:#fff; }
+.mobile-nav{
+  display:none;
+  margin-top:8px; padding:10px; border-radius:12px;
+  background: rgba(18,20,34,.75); border:1px solid rgba(255,255,255,.08);
+}
+.mnav-link{
+  display:block; padding:10px 12px; margin-bottom:8px; border-radius:10px; text-decoration:none; color:#cfd3e6;
+  border:1px solid transparent;
+}
+.mnav-link.active{ border-color:rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:#fff; }
+.block{ display:block; width:100%; text-align:center; }
+
+@media (max-width: 860px){
+  .hide-on-mobile{ display:none; }
+  .show-on-mobile{ display:initial; }
+  .mobile-nav{ display:block; }
+}
