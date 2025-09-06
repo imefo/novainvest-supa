@@ -1,41 +1,30 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { isAdmin } from "@/lib/role";
+import { getSessionUser, isAdminFast } from "@/lib/role";
 
 export default function AuthDebug() {
-  const [user, setUser] = useState(null);
-  const [admin, setAdmin] = useState(null);
+  const [state, setState] = useState({ user: null, isAdmin: false, ready: false });
 
   useEffect(() => {
+    let alive = true;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      if (user) setAdmin(await isAdmin(user));
+      try {
+        const u = await getSessionUser(500);
+        let isAdmin = false;
+        if (u?.id) isAdmin = await isAdminFast(u.id);
+        if (alive) setState({ user: u, isAdmin, ready: true });
+      } catch (e) {
+        if (alive) setState({ user: null, isAdmin: false, ready: true });
+      }
     })();
+    return () => { alive = false; };
   }, []);
 
+  if (!state.ready) return <pre style={{padding:16}}>Loading…</pre>;
   return (
-    <section className="section">
-      <div className="container">
-        <div className="card" style={{ padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Auth Debug</h3>
-          <pre style={{ whiteSpace: "pre-wrap" }}>
-            {JSON.stringify(
-              {
-                user: user
-                  ? { id: user.id, email: user.email, user_metadata: user.user_metadata }
-                  : null,
-                isAdmin: admin,
-              },
-              null,
-              2
-            )}
-          </pre>
-        </div>
-      </div>
-    </section>
+    <pre style={{padding:16, direction:"ltr"}}>
+{JSON.stringify({ user: state.user ? { id: state.user.id, email: state.user.email } : null, isAdmin: state.isAdmin }, null, 2)}
+    </pre>
   );
 }
