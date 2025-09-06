@@ -1,74 +1,108 @@
 "use client";
-export const dynamic = "force-dynamic";
 
+import { useState } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { isAdminFast } from "@/lib/role";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState(null);
+  const [err, setErr] = useState("");
 
-  useEffect(() => {
-    // اگر لاگین بود، مستقیم ببریم
-    (async () => {
-      const { data: { user } = {} } = await supabase.auth.getUser().catch(() => ({}));
-      if (user?.id) {
-        const ok = await isAdminFast(user.id).catch(() => false);
-        location.href = ok ? "/admin" : "/dashboard";
-      }
-    })();
-  }, []);
-
-  const onSubmit = async (e) => {
+  async function onSubmit(e) {
     e.preventDefault();
-    setErr(null);
+    setErr("");
     setLoading(true);
-    const fd = new FormData(e.currentTarget);
-    const email = String(fd.get("email") || "").trim();
-    const password = String(fd.get("password") || "");
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      // نقش
-      const { data: { user } = {} } = await supabase.auth.getUser();
-      const ok = user?.id ? await isAdminFast(user.id) : false;
-      location.href = ok ? "/admin" : "/dashboard";
+      if (error) {
+        setErr(error.message || "ورود ناموفق بود.");
+        return;
+      }
+      // ورود موفق → مستقیم به داشبورد (گیت ادمین داخل /admin است)
+      window.location.assign("/dashboard");
     } catch (e) {
-      setErr(e?.message || "خطا در ورود");
+      setErr("خطای غیرمنتظره. لطفاً دوباره تلاش کنید.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="nv-auth nv-rtl">
-      <div className="nv-auth-card glass-card">
-        <div className="nv-auth-brand">
-          <Link href="/" className="nv-brand-link">
-            <span className="nv-home-icon">🏠</span>
-            <span className="nv-brand-title">NovaInvest</span>
-          </Link>
+    <main className="nv-container" dir="rtl" style={{ minHeight: "70vh", display: "grid", placeItems: "center" }}>
+      <form onSubmit={onSubmit} className="glass-card" style={{ width: "min(520px, 92vw)", padding: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>NovaInvest</div>
+          <div style={{ opacity: .9 }}>ورود</div>
         </div>
 
-        <h3 style={{marginTop:8}}>ورود</h3>
-        <p className="muted" style={{marginTop:4}}>برای ادامه وارد حساب کاربری‌ات شو.</p>
+        <p style={{ margin: "0 0 12px 0", color: "#cbd5e1" }}>برای ادامه وارد حساب کاربری‌ات شو.</p>
 
-        <form onSubmit={onSubmit} style={{marginTop:12}}>
-          <input name="email" type="email" placeholder="ایمیل" required />
-          <input name="password" type="password" placeholder="رمز عبور" required style={{marginTop:10}} />
-          {err && <div className="error-box">{err}</div>}
-          <button className="btn btn-primary" style={{width:"100%", marginTop:10}} disabled={loading}>
-            {loading ? "در حال ورود…" : "ورود"}
-          </button>
-        </form>
+        <label className="lbl">ایمیل</label>
+        <input
+          type="email"
+          className="inpt"
+          placeholder="example@mail.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          inputMode="email"
+          autoComplete="email"
+        />
 
-        <div className="nv-auth-links">
-          <Link className="nv-link" href="/forgot">فراموشی رمز</Link>
+        <label className="lbl">رمز عبور</label>
+        <input
+          type="password"
+          className="inpt"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+        />
+
+        {err && (
+          <div className="alert" style={{ marginTop: 10 }}>{err}</div>
+        )}
+
+        <button
+          type="submit"
+          className="nv-btn nv-btn-primary"
+          disabled={loading}
+          style={{ width: "100%", marginTop: 12 }}
+        >
+          {loading ? "در حال ورود…" : "ورود"}
+        </button>
+
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
           <Link className="nv-link" href="/signup">ثبت‌نام</Link>
+          <Link className="nv-link" href="/forgot">فراموشی رمز</Link>
         </div>
-      </div>
-    </div>
+      </form>
+
+      <style jsx>{`
+        .glass-card{
+          background: rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);
+          border-radius:16px;
+          backdrop-filter: blur(10px) saturate(140%);
+        }
+        .lbl{display:block;margin:10px 0 6px 0;color:#cbd5e1;font-size:13px}
+        .inpt{
+          width:100%; height:44px; border-radius:10px;
+          border:1px solid rgba(255,255,255,.14);
+          background: rgba(255,255,255,.08); color:#e5e7eb;
+          padding:0 12px; outline:none;
+        }
+        .inpt::placeholder{color:#94a3b8}
+        .alert{
+          background: rgba(244,63,94,.18);
+          border:1px solid rgba(244,63,94,.35);
+          color:#fecaca; padding:8px 10px; border-radius:10px;
+          font-size:13px;
+        }
+      `}</style>
+    </main>
   );
 }
