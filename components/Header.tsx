@@ -1,104 +1,92 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { isAdminFast } from "@/lib/role";
 
-type SessionUser = { id: string; email?: string | null };
-async function fetchIsAdmin(userId: string) {
-  // به جدول profiles نگاه می‌کنیم: ستون is_admin:boolean
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) return false;
-  return !!data?.is_admin;
-}
+type U = { id: string; email?: string } | null;
 
 export default function Header() {
-  const pathname = usePathname();
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const r = useRouter();
+  const path = usePathname();
+  const [user, setUser] = useState<U>(null);
+  const [admin, setAdmin] = useState(false);
+  const [ready, setReady] = useState(false);
 
-  // نکته‌ی مهم: هدر هرگز «در حال بارگذاری…» نشان نمی‌دهد.
-  // ابتدا حالت مهمان را نمایش می‌دهیم، بعد از دریافت سشن، دکمه‌ها آپدیت می‌شوند.
   useEffect(() => {
-    let mounted = true;
-
+    let alive = true;
     (async () => {
-      const { data: s } = await supabase.auth.getSession();
-      if (!mounted) return;
-
-      const u = s.session?.user ?? null;
-      setUser(u ? { id: u.id, email: u.email } : null);
-
-      if (u?.id) {
-        const admin = await fetchIsAdmin(u.id);
-        if (mounted) setIsAdmin(admin);
+      const { data } = await supabase.auth.getSession();
+      const u = data?.session?.user ?? null;
+      if (alive) {
+        setUser(u);
+        if (u?.id) {
+          const a = await isAdminFast(u.id);
+          if (alive) setAdmin(a);
+        }
+        setReady(true);
       }
     })();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => {
       const u = sess?.user ?? null;
-      setUser(u ? { id: u.id, email: u.email } : null);
-      if (u?.id) {
-        const admin = await fetchIsAdmin(u.id);
-        setIsAdmin(admin);
-      } else {
-        setIsAdmin(false);
+      setUser(u);
+      if (!u) {
+        setAdmin(false);
       }
     });
 
     return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
+      alive = false;
+      sub?.subscription?.unsubscribe();
     };
   }, []);
 
-  const active = (p: string) => (pathname === p ? "nv-link nv-link-active" : "nv-link");
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    r.push("/?v=now");
+    r.refresh();
+  };
+
+  // تا آماده نشه، هیچ «متن لودینگ» نشان نده
+  if (!ready) return <div className="nv-header" />;
 
   return (
-    <header className="nv-header">
-      <div className="nv-header-inner" dir="rtl">
-        {/* چپ: ناوبری عمومی */}
+    <header className="nv-header" dir="rtl">
+      <div className="nv-header-inner">
+        {/* چپ */}
         <nav className="nv-nav-left">
-          <Link className={active("/about")} href="/about">درباره</Link>
-          <Link className={active("/plans")} href="/plans">پلن‌ها</Link>
-          <Link className={active("/contact")} href="/contact">تماس</Link>
+          <Link href="/contact" className="nv-link">تماس</Link>
+          <Link href="/plans" className="nv-link">پلن‌ها</Link>
+          <Link href="/about" className="nv-link">درباره</Link>
         </nav>
 
-        {/* وسط: برند */}
+        {/* وسط (لوگو/خانه) */}
         <div className="nv-brand">
           <Link href="/" className="nv-brand-link">
-            <span className="nv-brand-title">NovaInvest</span>
-            <span className="nv-brand-home" aria-hidden>🏠</span>
+            <span className="nv-brand-home">🏠</span>
+            <strong className="nv-brand-title">NovaInvest</strong>
           </Link>
         </div>
 
-        {/* راست: اکشن‌ها بر اساس وضعیت کاربر */}
+        {/* راست */}
         <div className="nv-nav-right">
-          {!user && (
-            <Link href="/login" className="nv-btn nv-btn-primary">ورود / ثبت‌نام</Link>
-          )}
-
-          {user && (
+          {user ? (
             <>
-              {/* وقتی داخل داشبورد هستیم، دکمه‌ی «ادمین» را هم نشان بده اگر ادمین است. */}
-              <Link href="/dashboard" className="nv-btn">داشبورد</Link>
-              {isAdmin && <Link href="/admin" className="nv-btn">ادمین</Link>}
-
-              <button
-                className="nv-btn"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  // بلافاصله UI به حالت مهمان برمی‌گردد
-                }}
-              >
-                خروج
-              </button>
+              {/* وقتی در /admin هستیم، دکمه‌ی “داشبورد” را نشان بده و بالعکس */}
+              {path?.startsWith("/admin") ? (
+                <Link href="/dashboard" className="nv-btn">داشبورد</Link>
+              ) : admin ? (
+                <Link href="/admin" className="nv-btn">ادمین</Link>
+              ) : (
+                <Link href="/dashboard" className="nv-btn">داشبورد</Link>
+              )}
+              <button onClick={signOut} className="nv-btn">خروج</button>
             </>
+          ) : (
+            <Link href="/login" className="nv-btn nv-btn-primary">ورود / ثبت‌نام</Link>
           )}
         </div>
       </div>
