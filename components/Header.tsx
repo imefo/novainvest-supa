@@ -2,79 +2,66 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { getSessionUser, isAdminFast, signOut } from "@/lib/role";
 
-type U = { id: string; email?: string } | null;
+type MiniUser = { id: string; email?: string };
 
 export default function Header() {
-  const [user, setUser] = useState<U>(null);
+  const [user, setUser] = useState<MiniUser | null>(null);
+  const [admin, setAdmin] = useState(false);
 
-  // فقط وضعیت لاگین را می‌خوانیم؛ هیچ چک دیگری نمی‌کنیم تا گیر نکند
+  // بدون اینکه رندر اصلی را بلوکه کند
   useEffect(() => {
-    let unsub: (() => void) | null = null;
+    let alive = true;
     (async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user ? { id: data.user.id, email: data.user.email ?? undefined } : null);
-
-      const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ? { id: session.user.id, email: session.user.email ?? undefined } : null);
-      });
-      unsub = sub?.subscription?.unsubscribe ?? null;
+      const u = await getSessionUser();
+      if (!alive) return;
+      setUser(u ? { id: u.id, email: u.email ?? undefined } : null);
+      if (u?.id) {
+        // چک ادمین جداگانه و بدون اثر روی رندر
+        isAdminFast(u.id).then((ok) => {
+          if (alive) setAdmin(!!ok);
+        });
+      }
     })();
-    return () => {
-      if (unsub) unsub();
-    };
+    return () => { alive = false; };
   }, []);
-
-  async function signOut() {
-    await supabase.auth.signOut();
-    // اختیاری: رفرش سریع
-    if (typeof window !== "undefined") window.location.reload();
-  }
 
   return (
     <header className="nv-header">
-      <div className="nv-header-inner">
-        {/* چپ */}
+      <div className="nv-header-inner" dir="rtl">
         <nav className="nv-nav-left">
-          <Link href="/" className="nv-link">خانه</Link>
-          <Link href="/about" className="nv-link">درباره</Link>
-          <Link href="/plans" className="nv-link">پلن‌ها</Link>
-          <Link href="/contact" className="nv-link">تماس</Link>
+          <Link className="nv-link" href="/contact">تماس</Link>
+          <Link className="nv-link" href="/plans">پلن‌ها</Link>
+          <Link className="nv-link" href="/about">درباره</Link>
         </nav>
 
-        {/* برند */}
         <div className="nv-brand">
           <Link href="/" className="nv-brand-link">
-            <span className="nv-brand-home">🏠</span>
             <span className="nv-brand-title">NovaInvest</span>
+            <span className="nv-brand-home">🏠</span>
           </Link>
         </div>
 
-        {/* راست */}
-        <nav className="nv-nav-right">
-          {!user && (
+        <div className="nv-nav-right">
+          {user ? (
             <>
-              <Link href="/login" className="nv-btn">ورود</Link>
-              <Link href="/signup" className="nv-btn nv-btn-primary">ثبت‌نام</Link>
-            </>
-          )}
-
-          {user && (
-            <>
-              {/* Dashboard برای همه‌ی لاگین‌شده‌ها */}
-              <Link href="/dashboard" className="nv-link">داشبورد</Link>
-              {/* لینک Admin صرفاً برای دسترسی سریع؛ خود /admin گِیت دارد */}
-              <Link href="/admin" className="nv-link">ادمین</Link>
-              {/* واریز دستی */}
-              <Link href="/deposit" className="nv-link">واریز</Link>
-
-              <button onClick={signOut} className="nv-btn" style={{ marginInlineStart: 8 }}>
+              <Link className="nv-btn" href="/dashboard">داشبورد</Link>
+              {admin && <Link className="nv-btn" href="/admin">ادمین</Link>}
+              <button
+                className="nv-btn"
+                onClick={async () => { await signOut(); window.location.replace("/"); }}
+              >
                 خروج
               </button>
             </>
+          ) : (
+            <>
+              <Link className="nv-btn nv-btn-primary" href="/login">ورود</Link>
+              <Link className="nv-btn" href="/signup">ثبت‌نام</Link>
+            </>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );
