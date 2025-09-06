@@ -28,7 +28,7 @@ export default function AdminLayout({ children }) {
       }, 4000);
 
       try {
-        const admin = await isAdminFast(u.id, 3000);
+        const admin = await isAdminFast(u.id);
         if (alive) {
           if (!admin) router.replace("/dashboard");
           else setOk(true);

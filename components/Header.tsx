@@ -20,7 +20,7 @@ export default function Header() {
         if (!alive) return;
         setUser(u ? { id: u.id, email: u.email || undefined } : null);
         if (u?.id) {
-          const ok = await isAdminFast(u.id, 3000);
+          const ok = await isAdminFast(u.id);
           if (alive) setAdmin(!!ok);
         }
       } finally {
