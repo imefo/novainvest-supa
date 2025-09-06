@@ -16,7 +16,7 @@ export default function Header() {
 
     (async () => {
       try {
-        const u = await getSessionUser(3500);
+        const u = await getSessionUser();
         if (!alive) return;
         setUser(u ? { id: u.id, email: u.email || undefined } : null);
         if (u?.id) {
