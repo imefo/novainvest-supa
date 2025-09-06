@@ -1,76 +1,55 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getSessionUser, isAdminFast } from "@/lib/role";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function AdminHome() {
-  const router = useRouter();
-  const [state, setState] = useState({ phase: "checking", err: "" }); // checking | ok | denied
+  const [ok, setOk]     = useState(false);
+  const [err, setErr]   = useState(null);
 
   useEffect(() => {
-    let alive = true;
+    let live = true;
     (async () => {
       try {
-        const user = await getSessionUser();
-        if (!alive) return;
-
-        if (!user) {
-          // لاگین نیست → بفرست به /login
-          router.replace("/login?next=/admin");
-          return;
-        }
-        const ok = await isAdminFast(user.id);
-        if (!alive) return;
-
-        setState({ phase: ok ? "ok" : "denied", err: "" });
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        if (!user) { window.location.href="/login"; return; }
+        const { data: isAdmin, error: rpcErr } = await supabase.rpc("is_admin", { uid: user.id });
+        if (rpcErr) throw rpcErr;
+        if (!isAdmin) { window.location.href="/dashboard"; return; }
+        if (live) setOk(true);
       } catch (e) {
-        console.error("admin gate error:", e);
-        if (alive) setState({ phase: "denied", err: "خطا در بررسی دسترسی" });
+        if (live) setErr(e.message || "مشکل ناشناخته");
       }
     })();
-    return () => { alive = false; };
-  }, [router]);
+    return () => { live = false; };
+  }, []);
 
-  if (state.phase === "checking") {
+  if (err) {
     return (
-      <div className="nv-container" dir="rtl" style={{ paddingTop: 24 }}>
-        <div className="card">در حال بررسی دسترسی ادمین…</div>
-      </div>
-    );
-  }
-
-  if (state.phase === "denied") {
-    return (
-      <div className="nv-container" dir="rtl" style={{ paddingTop: 24 }}>
-        <div className="card">
-          <h3 style={{ marginTop: 0 }}>دسترسی غیرمجاز</h3>
-          <p className="muted">{state.err || "شما دسترسی ادمین ندارید."}</p>
-          <Link href="/" className="nv-btn">بازگشت به خانه</Link>
+      <main className="nv-container nv-rtl">
+        <div className="nv-alert">
+          <strong>خطا</strong>
+          <p>مشکلی پیش آمد: {err}</p>
+          <button className="btn" onClick={()=>location.reload()}>تلاش مجدد</button>
         </div>
-      </div>
+      </main>
     );
   }
 
-  // phase === 'ok'
+  if (!ok) return (
+    <main className="nv-container nv-rtl"><div className="nv-loading">در حال بررسی…</div></main>
+  );
+
   return (
-    <div className="nv-container" dir="rtl" style={{ paddingTop: 24 }}>
-      <h2 className="section-title">مدیریت NovaInvest</h2>
-
-      <div className="card" style={{ display:"grid", gap:12 }}>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          <Link href="/admin/users" className="nv-btn">کاربران</Link>
-          <Link href="/admin/plans" className="nv-btn">پلن‌ها</Link>
-          <Link href="/admin/transactions" className="nv-btn">تراکنش‌ها</Link>
-          <Link href="/admin/kyc" className="nv-btn">احراز هویت</Link>
-          <Link href="/dashboard" className="nv-btn">داشبورد کاربر</Link>
-        </div>
-        <p className="muted" style={{ margin:0 }}>
-          از منوهای بالا وارد هر بخش شوید. این صفحه فقط گِیت ادمین است و سعی می‌کند هیچ‌وقت کرش نکند.
-        </p>
+    <main className="nv-container nv-rtl">
+      <div className="nv-grid-3">
+        <Link className="nv-card link" href="/admin/users">کاربران</Link>
+        <Link className="nv-card link" href="/admin/plans">پلن‌ها</Link>
+        <Link className="nv-card link" href="/admin/transactions">تراکنش‌ها</Link>
+        <Link className="nv-card link" href="/admin/kyc">احراز هویت</Link>
       </div>
-    </div>
+    </main>
   );
 }
