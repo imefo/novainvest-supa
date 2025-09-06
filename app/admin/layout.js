@@ -1,68 +1,51 @@
+// app/admin/layout.js
 "use client";
+export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { getCurrentUser, checkIsAdmin } from "@/lib/role";
-
-const NAV = [
-  { href: "/admin", label: "نمای کلی" },
-  { href: "/admin/users", label: "کاربران" },
-  { href: "/admin/plans", label: "پلن‌ها" },
-  { href: "/admin/transactions", label: "تراکنش‌ها" },
-  { href: "/admin/kyc", label: "احراز هویت" },
-  { href: "/dashboard", label: "خروج از ادمین" },
-];
+import { isAdminFast } from "@/lib/role";
 
 export default function AdminLayout({ children }) {
-  const router = useRouter();
+  const r = useRouter();
   const pathname = usePathname();
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
+    let alive = true;
     (async () => {
-      const { user } = await getCurrentUser();
-      if (!user) {
-        router.replace("/login?next=/admin");
+      const { data } = await supabase.auth.getSession();
+      const uid = data?.session?.user?.id || null;
+      if (!uid) {
+        r.replace("/login?next=" + encodeURIComponent(pathname));
         return;
       }
-      const { isAdmin } = await checkIsAdmin(user.id);
-      if (!isAdmin) {
-        router.replace("/dashboard");
+      const admin = await isAdminFast(uid);
+      if (!admin) {
+        r.replace("/dashboard");
         return;
       }
-      setOk(true);
+      if (alive) setOk(true);
     })();
-  }, [router]);
 
-  if (!ok) {
-    return (
-      <div className="admin-shell">
-        <div className="admin-content">
-          <div className="glass card">در حال بررسی دسترسی…</div>
-        </div>
-      </div>
-    );
-  }
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => {
+      const u = sess?.user;
+      if (!u) r.replace("/login");
+    });
+
+    return () => {
+      alive = false;
+      sub?.subscription?.unsubscribe();
+    };
+  }, [r, pathname]);
+
+  // نکته: هیچ متن طولانی لودینگ نشون نمی‌دیم
+  if (!ok) return null;
 
   return (
-    <div className="admin-shell">
-      <aside className="admin-sidebar glass">
-        <Link href="/" className="brand-home">🏠 NovaInvest</Link>
-        <nav className="admin-nav">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`admin-link ${pathname === item.href ? "active" : ""}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-      <main className="admin-content">{children}</main>
-    </div>
+    <section className="nv-admin-wrap">
+      {children}
+    </section>
   );
 }

@@ -1,61 +1,52 @@
+// app/admin/page.js
 "use client";
+export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AdminHome() {
-  const [stats, setStats] = useState({
-    users: 0,
-    plans: 0,
-    txs: 0,
-    kycPending: 0,
-  });
+  const [stats, setStats] = useState({ users: 0, deposits: 0, withdrawals: 0 });
 
   useEffect(() => {
+    let dead = false;
     (async () => {
-      const users = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-      const plans = await supabase
-        .from("plans")
-        .select("*", { count: "exact", head: true });
-      const txs = await supabase
-        .from("transactions")
-        .select("*", { count: "exact", head: true });
-      const kyc = await supabase
-        .from("kyc_submissions")
-        .select("status", { count: "exact", head: true })
-        .eq("status", "pending");
-
-      setStats({
-        users: users.count ?? 0,
-        plans: plans.count ?? 0,
-        txs: txs.count ?? 0,
-        kycPending: kyc.count ?? 0,
-      });
+      try {
+        // نمونه آمار سبک (در صورت داشتن جداول)
+        const [{ count: users = 0 } = {}] = await Promise.all([
+          supabase.from("profiles").select("id", { count: "exact", head: true })
+        ]);
+        if (!dead) setStats((s) => ({ ...s, users: users || 0 }));
+      } catch (_) {}
     })();
+    return () => { dead = true; };
   }, []);
 
   return (
-    <div className="stack gap16">
-      <h1>مدیریت</h1>
-      <div className="grid4">
-        <div className="glass stat">
-          <div className="muted">کاربران</div>
-          <strong>{stats.users}</strong>
-        </div>
-        <div className="glass stat">
-          <div className="muted">پلن‌ها</div>
-          <strong>{stats.plans}</strong>
-        </div>
-        <div className="glass stat">
-          <div className="muted">تراکنش‌ها</div>
-          <strong>{stats.txs}</strong>
-        </div>
-        <div className="glass stat">
-          <div className="muted">KYC در انتظار</div>
-          <strong>{stats.kycPending}</strong>
-        </div>
+    <div dir="rtl" className="card-glass" style={{ marginTop: 16 }}>
+      <h1 style={{ marginBottom: 10 }}>پنل مدیریت</h1>
+      <p className="muted" style={{ marginBottom: 16 }}>
+        مدیریت کاربران، پلن‌ها، تراکنش‌ها و احراز هویت
+      </p>
+
+      <div className="admin-grid">
+        <Link href="/admin/users" className="card">
+          <strong>کاربران</strong>
+          <span className="muted">{stats.users.toLocaleString()} کاربر</span>
+        </Link>
+        <Link href="/admin/plans" className="card">
+          <strong>پلن‌ها</strong>
+          <span className="muted">مدیریت ایجاد/ویرایش/فعال‌سازی</span>
+        </Link>
+        <Link href="/admin/transactions" className="card">
+          <strong>تراکنش‌ها</strong>
+          <span className="muted">واریز/برداشت‌ها، فیلتر و وضعیت</span>
+        </Link>
+        <Link href="/admin/kyc" className="card">
+          <strong>احراز هویت</strong>
+          <span className="muted">تأیید/رد مدارک</span>
+        </Link>
       </div>
     </div>
   );
