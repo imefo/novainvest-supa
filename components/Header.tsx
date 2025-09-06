@@ -4,95 +4,70 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { isAdmin } from "@/lib/role";
+import { isAdmin as checkIsAdmin } from "@/lib/role";
 
 type U = { id: string; email?: string | null } | null;
 
 export default function Header() {
   const [user, setUser] = useState<U>(null);
   const [admin, setAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    let sub: ReturnType<typeof supabase.auth.onAuthStateChange> | null = null;
 
-    async function load() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!mounted) return;
+    const init = async () => {
+      const { data } = await supabase.auth.getUser();
+      const u = data?.user ?? null;
+      setUser(u ? { id: u.id, email: u.email } : null);
+      if (u) setAdmin(await checkIsAdmin(u.id));
+    };
+    init();
 
-        setUser(user ?? null);
-
-        if (user?.id) {
-          const ok = await isAdmin(user.id);
-          if (!mounted) return;
-          setAdmin(ok);
-        } else {
-          setAdmin(false);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-
-    load();
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u?.id) {
-        isAdmin(u.id).then(setAdmin).catch(() => setAdmin(false));
-      } else {
-        setAdmin(false);
-      }
+    sub = supabase.auth.onAuthStateChange((_e, s) => {
+      const u = s?.user ?? null;
+      setUser(u ? { id: u.id, email: u.email } : null);
+      if (u) checkIsAdmin(u.id).then(setAdmin).catch(() => setAdmin(false));
+      else setAdmin(false);
     });
 
     return () => {
-      mounted = false;
-      sub?.subscription?.unsubscribe();
+      sub?.data.subscription.unsubscribe();
     };
   }, []);
 
-  // کوچک، شیشه‌ای
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    // رفرش سبک
+    if (typeof window !== "undefined") window.location.href = "/";
+  };
+
   return (
-    <header className="site-header">
-      <div className="site-header__inner">
-        <div className="brand">
-          <Link href="/">NovaInvest</Link>
-          <Link href="/" aria-label="خانه" className="home-ico">🏠</Link>
+    <header className="nv-header">
+      <nav className="nv-nav">
+        <div className="nv-left">
+          <Link href="/contact" className="nv-link">تماس</Link>
+          <Link href="/plans" className="nv-link">پلن‌ها</Link>
+          <Link href="/about" className="nv-link">درباره</Link>
         </div>
 
-        <nav className="nav">
-          <Link href="/about">درباره</Link>
-          <Link href="/plans">پلن‌ها</Link>
-          <Link href="/contact">تماس</Link>
-          {loading ? null : (
+        <div className="nv-brand">
+          <Link href="/" className="nv-logo">
+            <span className="home-emoji">🏠</span> NovaInvest
+          </Link>
+        </div>
+
+        <div className="nv-right">
+          {user ? (
             <>
-              {user ? (
-                <>
-                  {/* اگر در صفحه داشبورد هستیم، لینک Admin را نشان بده و برعکس */}
-                  <Link href="/dashboard">داشبورد</Link>
-                  {admin && <Link href="/admin">ادمین</Link>}
-                  <button
-                    className="btn btn-glass"
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      // برگشت به خانه بعد از خروج
-                      window.location.href = "/";
-                    }}
-                  >
-                    خروج
-                  </button>
-                </>
-              ) : (
-                <Link href="/login" className="btn btn-primary">ورود / ثبت‌نام</Link>
-              )}
+              <Link href="/dashboard" className="nv-btn">داشبورد</Link>
+              {admin && <Link href="/admin" className="nv-btn">ادمین</Link>}
+              <button className="nv-btn ghost" onClick={signOut}>خروج</button>
             </>
+          ) : (
+            <Link href="/login" className="nv-btn primary">ورود / ثبت‌نام</Link>
           )}
-        </nav>
-      </div>
+        </div>
+      </nav>
     </header>
   );
 }

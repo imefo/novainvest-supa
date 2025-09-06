@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 
 export const metadata = {
   title: "NovaInvest",
-  description: "Invest smart.",
+  description: "سرمایه‌گذاری هوشمند، شفاف و سریع",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +12,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fa" dir="rtl">
       <body>
         <Header />
-        <main id="main">{children}</main>
+        <main className="nv-container">{children}</main>
+        <footer className="nv-footer">
+          <div className="nv-footer-inner">
+            © NovaInvest 2025 — همه حقوق محفوظ است.
+          </div>
+        </footer>
       </body>
     </html>
   );

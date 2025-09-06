@@ -263,3 +263,22 @@ textarea.input{padding:10px}
 .btn-primary{background:linear-gradient(135deg,#7c3aed,#3b82f6);border:none}
 .btn-glass{background:rgba(255,255,255,.10)}
 #main{max-width:1100px;margin:0 auto;padding:16px}
+/* --- Header (glass) --- */
+.nv-header{position:sticky;top:0;z-index:50;background:rgba(18,22,34,.5);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)}
+.nv-nav{max-width:1200px;margin:0 auto;padding:10px 16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.nv-left,.nv-right{display:flex;gap:10px;align-items:center}
+.nv-left{justify-content:flex-start}
+.nv-right{justify-content:flex-end}
+.nv-link{padding:8px 10px;border-radius:8px;border:1px solid transparent;color:#cbd5e1;text-decoration:none}
+.nv-link:hover{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.06)}
+.nv-logo{font-weight:700;text-decoration:none;color:#e5e7eb;border-radius:10px;padding:6px 10px}
+.home-emoji{margin-left:6px}
+.nv-btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#e5e7eb;text-decoration:none}
+.nv-btn:hover{background:rgba(255,255,255,.14)}
+.nv-btn.primary{background:linear-gradient(135deg,#7c3aed,#3b82f6);border:none;color:#fff}
+.nv-btn.ghost{background:transparent;border-color:rgba(255,255,255,.18)}
+
+/* Layout container + footer */
+.nv-container{max-width:1200px;margin:0 auto;padding:16px}
+.nv-footer{margin-top:48px;border-top:1px solid rgba(255,255,255,.08);background:rgba(18,22,34,.4);backdrop-filter:blur(8px)}
+.nv-footer-inner{max-width:1200px;margin:0 auto;padding:16px;color:#cbd5e1;font-size:14px}
