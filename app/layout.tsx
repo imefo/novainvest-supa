@@ -14,9 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main className="nv-container">{children}</main>
         <footer className="nv-footer">
-          <div className="nv-footer-inner">
-            © NovaInvest 2025 — همه حقوق محفوظ است.
-          </div>
+          <div className="nv-footer-inner">© NovaInvest 2025 — همه حقوق محفوظ است.</div>
         </footer>
       </body>
     </html>

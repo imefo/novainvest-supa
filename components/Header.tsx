@@ -1,79 +1,75 @@
-// components/Header.tsx
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-type UserState =
-  | { loading: false; user: null; isAdmin: false }
-  | { loading: false; user: { id: string; email: string | null }; isAdmin: boolean }
-  | { loading: true };
+type SessionUser = { id: string; email?: string | null };
+async function fetchIsAdmin(userId: string) {
+  // به جدول profiles نگاه می‌کنیم: ستون is_admin:boolean
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) return false;
+  return !!data?.is_admin;
+}
 
 export default function Header() {
-  const [state, setState] = useState<UserState>({ loading: true });
+  const pathname = usePathname();
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
+  // نکته‌ی مهم: هدر هرگز «در حال بارگذاری…» نشان نمی‌دهد.
+  // ابتدا حالت مهمان را نمایش می‌دهیم، بعد از دریافت سشن، دکمه‌ها آپدیت می‌شوند.
   useEffect(() => {
-    let cancelled = false;
+    let mounted = true;
 
-    async function load() {
-      try {
-        // 1) سشن فعلی
-        const { data: sess } = await supabase.auth.getSession();
-        const session = sess?.session;
-        if (!session) {
-          if (!cancelled) setState({ loading: false, user: null, isAdmin: false });
-          return;
-        }
+    (async () => {
+      const { data: s } = await supabase.auth.getSession();
+      if (!mounted) return;
 
-        const uid = session.user.id;
-        // 2) نقش ادمین از جدول profiles
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("is_admin")
-          .eq("user_id", uid)
-          .maybeSingle();
+      const u = s.session?.user ?? null;
+      setUser(u ? { id: u.id, email: u.email } : null);
 
-        if (!cancelled) {
-          setState({
-            loading: false,
-            user: { id: uid, email: session.user.email ?? null },
-            isAdmin: prof?.is_admin === true,
-          });
-        }
-      } catch (e) {
-        // در خطای لحظه‌ای هم اجازه بده منوی مهمان دیده شود
-        if (!cancelled) setState({ loading: false, user: null, isAdmin: false });
+      if (u?.id) {
+        const admin = await fetchIsAdmin(u.id);
+        if (mounted) setIsAdmin(admin);
       }
-    }
+    })();
 
-    load();
-
-    // اگر کاربر لاگین/لاگ‌اوت کند، هدر آپدیت شود
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => load());
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, sess) => {
+      const u = sess?.user ?? null;
+      setUser(u ? { id: u.id, email: u.email } : null);
+      if (u?.id) {
+        const admin = await fetchIsAdmin(u.id);
+        setIsAdmin(admin);
+      } else {
+        setIsAdmin(false);
+      }
+    });
 
     return () => {
-      cancelled = true;
-      subscription?.unsubscribe();
+      mounted = false;
+      sub.subscription.unsubscribe();
     };
   }, []);
 
-  // ————————————————— UI —————————————————
-  // نکته: موقع loading، به‌جای متن «در حال بارگذاری…»، منوی مهمان را نشان می‌دهیم.
-  const isLoggedIn = !state.loading && !!("user" in state && state.user);
-  const isAdmin = !state.loading && "isAdmin" in state && state.isAdmin === true;
+  const active = (p: string) => (pathname === p ? "nv-link nv-link-active" : "nv-link");
 
   return (
     <header className="nv-header">
-      <div className="nv-header-inner">
+      <div className="nv-header-inner" dir="rtl">
+        {/* چپ: ناوبری عمومی */}
         <nav className="nv-nav-left">
-          <Link href="/contact" className="nv-link">تماس</Link>
-          <Link href="/plans" className="nv-link">پلن‌ها</Link>
-          <Link href="/about" className="nv-link">درباره</Link>
+          <Link className={active("/about")} href="/about">درباره</Link>
+          <Link className={active("/plans")} href="/plans">پلن‌ها</Link>
+          <Link className={active("/contact")} href="/contact">تماس</Link>
         </nav>
 
+        {/* وسط: برند */}
         <div className="nv-brand">
           <Link href="/" className="nv-brand-link">
             <span className="nv-brand-title">NovaInvest</span>
@@ -81,31 +77,30 @@ export default function Header() {
           </Link>
         </div>
 
-        <nav className="nv-nav-right">
-          {/* وقتی لاگین است: دکمه‌های داشبورد/ادمین + خروج */}
-          {isLoggedIn ? (
+        {/* راست: اکشن‌ها بر اساس وضعیت کاربر */}
+        <div className="nv-nav-right">
+          {!user && (
+            <Link href="/login" className="nv-btn nv-btn-primary">ورود / ثبت‌نام</Link>
+          )}
+
+          {user && (
             <>
-              {/* اگر داخل /admin هستیم، لینک داشبورد را نشان بده؛
-                  اگر داخل /dashboard هستیم، لینک ادمین (وقتی isAdmin=true) را نشان بده.
-                  ساده: هر دو را نمایش می‌دهیم تا همیشه در دسترس باشد. */}
+              {/* وقتی داخل داشبورد هستیم، دکمه‌ی «ادمین» را هم نشان بده اگر ادمین است. */}
               <Link href="/dashboard" className="nv-btn">داشبورد</Link>
-              {isAdmin && <Link href="/admin" className="nv-btn nv-btn-primary">ادمین</Link>}
+              {isAdmin && <Link href="/admin" className="nv-btn">ادمین</Link>}
+
               <button
                 className="nv-btn"
                 onClick={async () => {
                   await supabase.auth.signOut();
-                  // ریفرش نرم
-                  window.location.href = "/";
+                  // بلافاصله UI به حالت مهمان برمی‌گردد
                 }}
               >
                 خروج
               </button>
             </>
-          ) : (
-            // وقتی لاگین نیست یا هنوز در حال لود است: دکمه ورود/ثبت‌نام
-            <Link href="/login" className="nv-btn nv-btn-primary">ورود / ثبت‌نام</Link>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );
