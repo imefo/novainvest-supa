@@ -101,3 +101,4 @@ export default function Header() {
     </header>
   );
 }
+<Link href="/deposit" className="nv-link">واریز</Link>
