@@ -179,3 +179,20 @@ textarea.input{padding:10px}
 .thead{font-weight:700;color:#e5e7eb;background:rgba(255,255,255,.05);padding:10px;border-radius:10px}
 .trow{padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.04)}
 .tiny{font-size:12px}.muted{color:#cbd5e1}
+.site-header{position:sticky;top:0;z-index:50;background:rgba(10,12,20,.6);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)}
+.brand{display:flex;align-items:center;gap:8px;text-decoration:none;color:#fff;font-weight:700}
+.brand-logo{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18)}
+.brand-text{letter-spacing:.2px}
+.nav-links a{margin-inline:10px;color:#e5e7eb;text-decoration:none}
+.nav-links a:hover{color:#fff}
+.hide-sm{display:block}
+.hide-md-up{display:none}
+.mobile-nav{display:none}
+
+@media (max-width:860px){
+  .hide-sm{display:none}
+  .hide-md-up{display:inline-flex}
+  .mobile-nav{display:grid;gap:8px;padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);background:rgba(10,12,20,.75)}
+  .mobile-nav a{color:#e5e7eb;text-decoration:none;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.1)}
+  .mobile-nav a:last-child{border-bottom:none}
+}

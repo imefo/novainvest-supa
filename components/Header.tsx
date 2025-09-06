@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-
-// اگر دوست داری از util خودت استفاده کنی می‌تونی بجاش از lib/role استفاده کنی.
-// اینجا مستقیم RPC is_admin رو صدا می‌زنیم تا وابستگی کمتر باشه.
 
 type SessionUser = { id: string; email?: string | null } | null;
 
 export default function Header() {
+  const pathname = usePathname();
   const [user, setUser] = useState<SessionUser>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false); // برای منوی موبایل
+  const [open, setOpen] = useState(false); // mobile menu
 
   useEffect(() => {
     let ignore = false;
@@ -24,7 +23,6 @@ export default function Header() {
       const u = data?.user ?? null;
       if (!ignore) setUser(u ? { id: u.id, email: u.email } : null);
 
-      // چک ادمین فقط وقتی لاگین بود
       if (u) {
         const { data: isAdminResp } = await supabase.rpc("is_admin", { uid: u.id });
         if (!ignore) setIsAdmin(!!isAdminResp);
@@ -36,24 +34,29 @@ export default function Header() {
 
     load();
 
-    // گوش دادن به تغییرات auth (لاگین/لاگ‌اوت)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, _session) => {
-      load();
-    });
-
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
     return () => {
+      sub.subscription.unsubscribe();
       ignore = true;
-      subscription.unsubscribe();
     };
   }, []);
 
   async function signOut() {
     await supabase.auth.signOut();
-    // برگرد به صفحه اصلی
     window.location.href = "/";
   }
+
+  // منطق نمایش لینک‌های Admin/Dashboard
+  const onAdmin = pathname?.startsWith("/admin");
+  const onDashboard = pathname === "/dashboard";
+
+  const showDashboardLink =
+    !!user && ( !onDashboard && (!isAdmin || (isAdmin && onAdmin)) );
+  // اگر ادمین هست و الان داخل admin است، Dashboard رو نشان بده
+  // اگر ادمین نیست ولی لاگین است و روی صفحه دیگری است، Dashboard رو نشان بده
+
+  const showAdminLink =
+    !!user && isAdmin && !onAdmin; // ادمین‌ها وقتی خارج از /admin هستند، Admin دیده شود
 
   return (
     <header className="site-header">
@@ -64,19 +67,19 @@ export default function Header() {
             <span className="brand-text">NovaInvest</span>
           </Link>
 
-          {/* لینک‌های سمت چپ (دسکتاپ) */}
+          {/* لینک‌های دسکتاپ */}
           <nav className="nav-links hide-sm">
             <Link href="/plans">Plans</Link>
             <Link href="/about">About</Link>
             <Link href="/contact">Contact</Link>
-            {/* همیشه Dashboard برای لاگین‌شده‌ها */}
-            {user && <Link href="/dashboard">Dashboard</Link>}
-            {/* فقط ادمین‌ها: لینک Admin همزمان با Dashboard */}
-            {user && isAdmin && <Link href="/admin">Admin</Link>}
+
+            {/* ورود کرده‌ها */}
+            {user && showDashboardLink && <Link href="/dashboard">Dashboard</Link>}
+            {user && showAdminLink && <Link href="/admin">Admin</Link>}
           </nav>
         </div>
 
-        {/* اکشن‌های سمت راست */}
+        {/* اکشن‌های راست */}
         <div className="row center gap8">
           {loading ? (
             <span className="muted">…</span>
@@ -86,6 +89,7 @@ export default function Header() {
               <button className="btn" onClick={signOut}>خروج</button>
             </>
           ) : (
+            // اگر وارد نیست، ورود/ثبت‌نام
             <>
               <Link className="btn" href="/login">ورود</Link>
               <Link className="btn" href="/signup">ثبت‌نام</Link>
@@ -93,7 +97,11 @@ export default function Header() {
           )}
 
           {/* دکمه موبایل */}
-          <button className="btn icon hide-md-up" onClick={() => setOpen(v => !v)} aria-label="menu">
+          <button
+            className="btn icon hide-md-up"
+            onClick={() => setOpen(v => !v)}
+            aria-label="menu"
+          >
             ☰
           </button>
         </div>
@@ -105,8 +113,20 @@ export default function Header() {
           <Link href="/plans" onClick={()=>setOpen(false)}>Plans</Link>
           <Link href="/about" onClick={()=>setOpen(false)}>About</Link>
           <Link href="/contact" onClick={()=>setOpen(false)}>Contact</Link>
-          {user && <Link href="/dashboard" onClick={()=>setOpen(false)}>Dashboard</Link>}
-          {user && isAdmin && <Link href="/admin" onClick={()=>setOpen(false)}>Admin</Link>}
+          {user && showDashboardLink && (
+            <Link href="/dashboard" onClick={()=>setOpen(false)}>Dashboard</Link>
+          )}
+          {user && showAdminLink && (
+            <Link href="/admin" onClick={()=>setOpen(false)}>Admin</Link>
+          )}
+          {user ? (
+            <button className="btn" onClick={()=>{ setOpen(false); signOut(); }}>خروج</button>
+          ) : (
+            <>
+              <Link className="btn" href="/login" onClick={()=>setOpen(false)}>ورود</Link>
+              <Link className="btn" href="/signup" onClick={()=>setOpen(false)}>ثبت‌نام</Link>
+            </>
+          )}
         </div>
       )}
     </header>
