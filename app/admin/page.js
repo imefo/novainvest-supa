@@ -1,55 +1,66 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function AdminHome() {
-  const [ok, setOk]     = useState(false);
-  const [err, setErr]   = useState(null);
+export default function AdminOverview() {
+  const [m, setM] = useState({ users:0, plans:0, txAll:0, kycPending:0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let live = true;
+    let alive = true;
     (async () => {
+      setLoading(true);
+
+      const [{ count: users = 0 }, { count: plans = 0 }] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("plans").select("*", { count: "exact", head: true }),
+      ]).then(res => res.map(r => ({ count: r?.count || 0 }))).catch(()=>[{count:0},{count:0}]);
+
+      // تراکنش‌ها و KYC (اگر جدول kyc وجود دارد)
+      let txAll = 0, kycPending = 0;
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        if (!user) { window.location.href="/login"; return; }
-        const { data: isAdmin, error: rpcErr } = await supabase.rpc("is_admin", { uid: user.id });
-        if (rpcErr) throw rpcErr;
-        if (!isAdmin) { window.location.href="/dashboard"; return; }
-        if (live) setOk(true);
-      } catch (e) {
-        if (live) setErr(e.message || "مشکل ناشناخته");
-      }
+        const tx = await supabase.from("transactions").select("*", { count:"exact", head:true });
+        txAll = tx?.count || 0;
+      } catch {}
+      try {
+        const kyc = await supabase.from("kyc").select("*", { count:"exact", head:true }).eq("status","pending");
+        kycPending = kyc?.count || 0;
+      } catch {}
+
+      if (alive) setM({ users, plans, txAll, kycPending });
+      if (alive) setLoading(false);
     })();
-    return () => { live = false; };
+    return () => (alive = false);
   }, []);
 
-  if (err) {
-    return (
-      <main className="nv-container nv-rtl">
-        <div className="nv-alert">
-          <strong>خطا</strong>
-          <p>مشکلی پیش آمد: {err}</p>
-          <button className="btn" onClick={()=>location.reload()}>تلاش مجدد</button>
-        </div>
-      </main>
-    );
-  }
-
-  if (!ok) return (
-    <main className="nv-container nv-rtl"><div className="nv-loading">در حال بررسی…</div></main>
-  );
-
   return (
-    <main className="nv-container nv-rtl">
-      <div className="nv-grid-3">
-        <Link className="nv-card link" href="/admin/users">کاربران</Link>
-        <Link className="nv-card link" href="/admin/plans">پلن‌ها</Link>
-        <Link className="nv-card link" href="/admin/transactions">تراکنش‌ها</Link>
-        <Link className="nv-card link" href="/admin/kyc">احراز هویت</Link>
+    <div className="nv-container nv-rtl" style={{paddingTop:24}}>
+      <h2 className="section-title">نمای کلی</h2>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+        <div className="card">
+          <div className="muted">کاربران</div>
+          <div style={{fontSize:28,fontWeight:800}}>{m.users}</div>
+        </div>
+        <div className="card">
+          <div className="muted">پلن‌ها</div>
+          <div style={{fontSize:28,fontWeight:800}}>{m.plans}</div>
+        </div>
+        <div className="card">
+          <div className="muted">تراکنش‌ها</div>
+          <div style={{fontSize:28,fontWeight:800}}>{m.txAll}</div>
+        </div>
+        <div className="card">
+          <div className="muted">KYC در انتظار</div>
+          <div style={{fontSize:28,fontWeight:800}}>{m.kycPending}</div>
+        </div>
       </div>
-    </main>
+
+      <div className="card" style={{marginTop:16}}>
+        {loading ? "در حال بارگذاری…" : "همه‌چیز آماده است. از منوی سمت چپ یکی از بخش‌ها را انتخاب کنید."}
+      </div>
+    </div>
   );
 }
