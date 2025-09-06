@@ -1,62 +1,74 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-
-function LoginInner() {
-  const q = useSearchParams();
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  async function onSubmit(e) {
-    e.preventDefault();
-    setErr(""); setLoading(true);
-    const fd = new FormData(e.currentTarget);
-    const email = String(fd.get("email")||"").trim();
-    const password = String(fd.get("password")||"");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) { setErr(error.message); return; }
-    location.href = "/dashboard";
-  }
-
-  useEffect(()=>{ if(q.get("next")==="admin") document.querySelector("h1")?.scrollIntoView({behavior:"smooth"}); },[q]);
-
-  return (
-    <main className="nv-rtl">
-      <div className="container" style={{display:"grid",placeItems:"center",minHeight:"70vh"}}>
-        <form onSubmit={onSubmit} className="card" style={{width:"100%",maxWidth:420,display:"grid",gap:12}}>
-          <div style={{display:"flex",gap:10,alignItems:"center",justifyContent:"center",marginBottom:6}}>
-            <div className="nv-home-icon">🏠</div>
-            <strong className="nv-title">NovaInvest</strong>
-          </div>
-          <h1 style={{textAlign:"center",margin:0}}>ورود</h1>
-          {err && <div className="card" style={{borderColor:"#ef4444"}}>{err}</div>}
-          <div>
-            <label style={{display:"block",marginBottom:6,color:"#cbd5e1"}}>ایمیل</label>
-            <input className="input" type="email" name="email" required placeholder="you@mail.com"/>
-          </div>
-          <div>
-            <label style={{display:"block",marginBottom:6,color:"#cbd5e1"}}>رمز عبور</label>
-            <input className="input" type="password" name="password" required placeholder="••••••••"/>
-          </div>
-          <button className="btn btn-primary" disabled={loading}>{loading?"لطفاً صبر کنید…":"ورود"}</button>
-
-          <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
-            <a href="/forgot" className="nv-link">فراموشی رمز؟</a>
-            <a href="/signup" className="nv-link">ثبت‌نام</a>
-          </div>
-        </form>
-      </div>
-    </main>
-  );
-}
+import { isAdminFast } from "@/lib/role";
 
 export default function LoginPage() {
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    // اگر لاگین بود، مستقیم ببریم
+    (async () => {
+      const { data: { user } = {} } = await supabase.auth.getUser().catch(() => ({}));
+      if (user?.id) {
+        const ok = await isAdminFast(user.id).catch(() => false);
+        location.href = ok ? "/admin" : "/dashboard";
+      }
+    })();
+  }, []);
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setErr(null);
+    setLoading(true);
+    const fd = new FormData(e.currentTarget);
+    const email = String(fd.get("email") || "").trim();
+    const password = String(fd.get("password") || "");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      // نقش
+      const { data: { user } = {} } = await supabase.auth.getUser();
+      const ok = user?.id ? await isAdminFast(user.id) : false;
+      location.href = ok ? "/admin" : "/dashboard";
+    } catch (e) {
+      setErr(e?.message || "خطا در ورود");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Suspense fallback={<div style={{padding:16}}>در حال بارگذاری…</div>}>
-      <LoginInner />
-    </Suspense>
+    <div className="nv-auth nv-rtl">
+      <div className="nv-auth-card glass-card">
+        <div className="nv-auth-brand">
+          <Link href="/" className="nv-brand-link">
+            <span className="nv-home-icon">🏠</span>
+            <span className="nv-brand-title">NovaInvest</span>
+          </Link>
+        </div>
+
+        <h3 style={{marginTop:8}}>ورود</h3>
+        <p className="muted" style={{marginTop:4}}>برای ادامه وارد حساب کاربری‌ات شو.</p>
+
+        <form onSubmit={onSubmit} style={{marginTop:12}}>
+          <input name="email" type="email" placeholder="ایمیل" required />
+          <input name="password" type="password" placeholder="رمز عبور" required style={{marginTop:10}} />
+          {err && <div className="error-box">{err}</div>}
+          <button className="btn btn-primary" style={{width:"100%", marginTop:10}} disabled={loading}>
+            {loading ? "در حال ورود…" : "ورود"}
+          </button>
+        </form>
+
+        <div className="nv-auth-links">
+          <Link className="nv-link" href="/forgot">فراموشی رمز</Link>
+          <Link className="nv-link" href="/signup">ثبت‌نام</Link>
+        </div>
+      </div>
+    </div>
   );
 }
