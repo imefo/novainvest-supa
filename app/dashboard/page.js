@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -87,7 +88,11 @@ export default function DashboardPage() {
         </div>
 
         {loading ? "در حال بارگذاری…" : (plans.length === 0 ? (
-          <div className="muted">هنوز پلنی ندارید. از صفحه <a className="nv-link" href="/plans">پلن‌ها</a> شروع کنید.</div>
+          <div className="muted">
+            هنوز پلنی ندارید. از صفحه{" "}
+            <Link className="nv-link" href="/plans">پلن‌ها</Link>
+            {" "}شروع کنید.
+          </div>
         ) : (
           <div style={{overflowX:"auto"}}>
             <table className="nv-table">
@@ -128,7 +133,7 @@ export default function DashboardPage() {
       <div className="card" style={{marginTop:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <strong>تراکنش‌های اخیر</strong>
-          <a className="nv-link" href="/dashboard/transactions">همه تراکنش‌ها</a>
+          <Link className="nv-link" href="/dashboard/transactions">همه تراکنش‌ها</Link>
         </div>
         {loading ? "در حال بارگذاری…" : (tx.length === 0 ? (
           <div className="muted">تراکنشی ثبت نشده است.</div>
