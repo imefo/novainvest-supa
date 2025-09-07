@@ -1,66 +1,38 @@
 "use client";
-export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import Link from "next/link";
 
-export default function AdminOverview() {
-  const [m, setM] = useState({ users:0, plans:0, txAll:0, kycPending:0 });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-
-      const [{ count: users = 0 }, { count: plans = 0 }] = await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("plans").select("*", { count: "exact", head: true }),
-      ]).then(res => res.map(r => ({ count: r?.count || 0 }))).catch(()=>[{count:0},{count:0}]);
-
-      // تراکنش‌ها و KYC (اگر جدول kyc وجود دارد)
-      let txAll = 0, kycPending = 0;
-      try {
-        const tx = await supabase.from("transactions").select("*", { count:"exact", head:true });
-        txAll = tx?.count || 0;
-      } catch {}
-      try {
-        const kyc = await supabase.from("kyc").select("*", { count:"exact", head:true }).eq("status","pending");
-        kycPending = kyc?.count || 0;
-      } catch {}
-
-      if (alive) setM({ users, plans, txAll, kycPending });
-      if (alive) setLoading(false);
-    })();
-    return () => (alive = false);
-  }, []);
-
+export default function AdminHome() {
   return (
-    <div className="nv-container nv-rtl" style={{paddingTop:24}}>
-      <h2 className="section-title">نمای کلی</h2>
-
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+    <main dir="rtl" className="nv-container">
+      <h1 style={{ margin: "8px 0 16px" }}>مدیریت</h1>
+      <div className="features-grid" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
         <div className="card">
-          <div className="muted">کاربران</div>
-          <div style={{fontSize:28,fontWeight:800}}>{m.users}</div>
+          <h3>کاربران</h3>
+          <p className="muted">مشاهده و مدیریت کاربران.</p>
+          <Link href="/admin/users" className="nv-btn" style={{ marginTop: 8 }}>ورود</Link>
         </div>
         <div className="card">
-          <div className="muted">پلن‌ها</div>
-          <div style={{fontSize:28,fontWeight:800}}>{m.plans}</div>
+          <h3>پلن‌ها</h3>
+          <p className="muted">ایجاد/ویرایش/حذف پلن‌ها و فعال/غیرفعال.</p>
+          <Link href="/admin/plans" className="nv-btn" style={{ marginTop: 8 }}>ورود</Link>
         </div>
         <div className="card">
-          <div className="muted">تراکنش‌ها</div>
-          <div style={{fontSize:28,fontWeight:800}}>{m.txAll}</div>
+          <h3>تراکنش‌ها</h3>
+          <p className="muted">واریز/برداشت‌ها و وضعیت‌ها.</p>
+          <Link href="/admin/transactions" className="nv-btn" style={{ marginTop: 8 }}>ورود</Link>
         </div>
         <div className="card">
-          <div className="muted">KYC در انتظار</div>
-          <div style={{fontSize:28,fontWeight:800}}>{m.kycPending}</div>
+          <h3>احراز هویت</h3>
+          <p className="muted">تأیید/رد KYC کاربران.</p>
+          <Link href="/admin/kyc" className="nv-btn" style={{ marginTop: 8 }}>ورود</Link>
+        </div>
+        <div className="card">
+          <h3>درخواست واریز دستی</h3>
+          <p className="muted">تأیید اسکرین‌شات/TxHash و شارژ حساب.</p>
+          <Link href="/admin/deposit" className="nv-btn" style={{ marginTop: 8 }}>ورود</Link>
         </div>
       </div>
-
-      <div className="card" style={{marginTop:16}}>
-        {loading ? "در حال بارگذاری…" : "همه‌چیز آماده است. از منوی سمت چپ یکی از بخش‌ها را انتخاب کنید."}
-      </div>
-    </div>
+    </main>
   );
 }

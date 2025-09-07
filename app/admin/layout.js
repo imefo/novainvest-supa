@@ -1,90 +1,70 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { isAdminFast } from "@/lib/role";
+import Link from "next/link";
+import { getSessionUser, isAdminFast } from "@/lib/role";
 
 export default function AdminLayout({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [allowed, setAllowed] = useState(false);
-  const [err, setErr] = useState("");
+  const [state, setState] = useState({ checking: true, allowed: false });
 
   useEffect(() => {
     let alive = true;
-    const timer = setTimeout(() => {
-      // اگر پاسخ دیر شد، از گیرکردن جلوگیری کن
-      if (alive && loading) {
-        setErr("بررسی دسترسی طولانی شد. لطفاً دوباره تلاش کنید.");
-        setLoading(false);
+    const guard = async () => {
+      // حداکثر 5 ثانیه صبر؛ بعد از اون هم از حالت لود خارج شو
+      const safety = setTimeout(() => {
+        if (alive) setState((s) => ({ ...s, checking: false }));
+      }, 5000);
+
+      const u = await getSessionUser();
+      if (!alive) return;
+
+      if (!u?.id) {
+        clearTimeout(safety);
+        // کاربر لاگین نیست
+        window.location.replace("/login?next=/admin");
+        return;
       }
-    }, 6000);
+      const ok = await isAdminFast(u.id);
+      if (!alive) return;
 
-    (async () => {
-      try {
-        setErr("");
-        // 1) گرفتن سشن
-        const { data: { user }, error: sErr } = await supabase.auth.getUser();
-        if (sErr) throw sErr;
-        if (!user?.id) {
-          if (!alive) return;
-          // لاگین نیست → بفرست صفحه ورود
-          window.location.replace("/login");
-          return;
-        }
-
-        // 2) چک سریع ادمین (بدون آرگومان اضافه)
-        const ok = await isAdminFast(user.id);
-        if (!alive) return;
-        if (ok) {
-          setAllowed(true);
-        } else {
-          // دسترسی ادمین ندارد → بفرست داشبورد
-          window.location.replace("/dashboard?na=1");
-          return;
-        }
-      } catch (e) {
-        if (!alive) return;
-        setErr("خطا در بررسی دسترسی ادمین.");
-      } finally {
-        if (alive) setLoading(false);
-        clearTimeout(timer);
+      clearTimeout(safety);
+      if (ok) setState({ checking: false, allowed: true });
+      else {
+        // لاگین هست ولی ادمین نیست
+        window.location.replace("/dashboard");
       }
-    })();
-
-    return () => {
-      alive = false;
-      clearTimeout(timer);
     };
+
+    guard();
+    return () => { alive = false; };
   }, []);
 
-  if (loading) {
+  if (state.checking) {
     return (
-      <main dir="rtl" className="nv-container" style={{ minHeight: "50vh", display: "grid", placeItems: "center" }}>
-        <div className="glass-card" style={{ padding: 16, minWidth: 260, textAlign: "center" }}>
-          در حال بررسی دسترسی ادمین…
+      <main dir="rtl" className="nv-container" style={{ minHeight: "60vh", display: "grid", placeItems: "center" }}>
+        <div className="glass-card" style={{ padding: 16 }}>در حال بررسی دسترسی ادمین…</div>
+      </main>
+    );
+  }
+
+  if (!state.allowed) {
+    // اگر به هر دلیل ریدایرکت نشد، پیام می‌ده که کاربر گیر نکند
+    return (
+      <main dir="rtl" className="nv-container" style={{ minHeight: "60vh", display: "grid", placeItems: "center" }}>
+        <div className="glass-card" style={{ padding: 16 }}>
+          <div style={{ marginBottom: 8 }}>اجازهٔ دسترسی به بخش ادمین ندارید.</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Link href="/dashboard" className="nv-btn">داشبورد</Link>
+            <Link href="/" className="nv-btn">صفحهٔ اصلی</Link>
+          </div>
         </div>
       </main>
     );
   }
 
-  if (err && !allowed) {
-    return (
-      <main dir="rtl" className="nv-container" style={{ minHeight: "50vh", display: "grid", placeItems: "center" }}>
-        <div className="glass-card" style={{ padding: 16, minWidth: 280 }}>
-          <strong>خطا</strong>
-          <div style={{ marginTop: 8 }}>{err}</div>
-          <button
-            className="nv-btn"
-            style={{ marginTop: 12, width: "100%" }}
-            onClick={() => window.location.reload()}
-          >
-            تلاش مجدد
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  // ادمین تایید شد
-  return <>{children}</>;
+  return (
+    <div dir="rtl" className="nv-container">
+      {children}
+    </div>
+  );
 }
