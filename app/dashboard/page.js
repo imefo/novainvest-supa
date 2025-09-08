@@ -1,4 +1,7 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
@@ -271,3 +274,16 @@ export default function DashboardPage() {
     </div>
   );
 }
+{/* کارت کیف‌پول USDT */}
+<div className="p-4 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 shadow-md border border-gray-700">
+  <h3 className="text-sm font-semibold text-gray-400 mb-1">موجودی کیف‌پول</h3>
+  <p className="text-xl font-bold text-white">{walletBalance} USDT</p>
+  <div className="flex gap-2 mt-3">
+    <button className="px-3 py-1 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
+      واریز
+    </button>
+    <button className="px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700">
+      برداشت
+    </button>
+  </div>
+</div>
