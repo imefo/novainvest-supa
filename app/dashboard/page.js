@@ -1,289 +1,140 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import ReferralCard from "@/components/ReferralCard";
-// --- helpers ---
-const rial = (n) =>
-  new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(
-    Number(n || 0)
-  );
 
-const statusChip = (s) => {
-  const map = {
-    approved: "تاییدشده",
-    done: "تاییدشده",
-    pending: "درحال بررسی",
-    rejected: "رد شده",
-    failed: "ناموفق",
-  };
-  return map[s] || s;
-};
-export default function DashboardPage() {
+export default function Dashboard() {
   const [loading, setLoading] = useState(true);
-  const [me, setMe] = useState(null);
+  const [user, setUser] = useState(null);
+  const [wallet, setWallet] = useState({ usdt: 0 });
+  const [stats, setStats] = useState({ last30d: 0, plansCount: 0 });
+  const [error, setError] = useState("");
 
-  const [balance, setBalance] = useState(0);
-  const [invested, setInvested] = useState(0);
-  const [monthProfit, setMonthProfit] = useState(0);
-
-  const [portfolio, setPortfolio] = useState([]); // [{plan_name, amount, started_at, status, progress}]
-  const [lastTx, setLastTx] = useState([]); // 8 تراکنش آخر
-
-  // -------- load all ----------
   useEffect(() => {
     let alive = true;
-
     (async () => {
-      setLoading(true);
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData?.user;
+        setError("");
+        setLoading(true);
+
+        // session
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          window.location.href = "/login?to=/dashboard";
+          setUser(null);
+          setLoading(false);
           return;
         }
         if (!alive) return;
-        setMe({ id: user.id, email: user.email });
+        setUser({ id: user.id, email: user.email ?? "" });
 
-        // 1) Transactions (approved deposits/withdrawals/profit)
-        // اگر وضعیت‌های نهایی شما متفاوت است، این آرایه را تنظیم کن:
-        const APPROVED = ["approved", "done", "success"];
-
-        const { data: tx, error: txErr } = await supabase
-          .from("transactions")
-          .select("id,type,amount,status,created_at")
+        // balance
+        const { data: bal, error: eBal } = await supabase
+          .from("user_balances")
+          .select("usdt_balance")
           .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(200);
-        if (txErr) throw txErr;
-
-        const okTx = tx.filter((t) => APPROVED.includes(String(t.status)));
-
-        // موجودی = واریز تاییدشده - برداشت تاییدشده + سودهای تاییدشده
-        const dep = okTx
-          .filter((t) => t.type === "deposit")
-          .reduce((s, t) => s + Number(t.amount || 0), 0);
-        const wd = okTx
-          .filter((t) => t.type === "withdraw")
-          .reduce((s, t) => s + Number(t.amount || 0), 0);
-        const prof = okTx
-          .filter((t) => t.type === "profit")
-          .reduce((s, t) => s + Number(t.amount || 0), 0);
-
-        const now = new Date();
-        const mAgo = new Date(now);
-        mAgo.setDate(now.getDate() - 30);
-        const last30Profit = okTx
-          .filter(
-            (t) =>
-              t.type === "profit" &&
-              new Date(t.created_at) >= mAgo &&
-              new Date(t.created_at) <= now
-          )
-          .reduce((s, t) => s + Number(t.amount || 0), 0);
-
+          .single();
+        if (eBal && eBal.code !== "PGRST116") throw eBal; // ignore "no rows" only
         if (!alive) return;
-        setBalance(dep - wd + prof);
-        setMonthProfit(last30Profit);
+        setWallet({ usdt: bal?.usdt_balance ?? 0 });
 
-        // 8 تراکنش آخر برای جدول
-        setLastTx(tx.slice(0, 8));
-
-        // 2) پرتفوی (از user_plans یا هر جدولی که داری)
-        // اگر جدول شما نام دیگری دارد، این بخش را مطابقش عوض کن.
-        // ستون‌های رایج: plan_id, plan_name, amount, status, started_at, ends_at
-        const { data: up, error: upErr } = await supabase
+        // simple stats (plans count + last 30d profit placeholder = 0)
+        const { count } = await supabase
           .from("user_plans")
-          .select(
-            "id, amount, status, started_at, ends_at, plans(name, duration_days)"
-          )
-          .eq("user_id", user.id)
-          .order("started_at", { ascending: false })
-          .limit(50);
-        if (upErr) {
-          // اگر چنین جدولی نداری، پرتفوی را خالی بگذاریم تا UI کار کند
-          setPortfolio([]);
-        } else {
-          const shaped = (up || []).map((r) => {
-            const name = r?.plans?.name ?? "پلن";
-            const dur = r?.plans?.duration_days ?? 0;
-            const started = r?.started_at ? new Date(r.started_at) : null;
-            const ends = r?.ends_at ? new Date(r.ends_at) : null;
-
-            let progress = 0;
-            if (started && ends && ends > started) {
-              const total = ends - started;
-              const elapsed = Math.min(Date.now() - started, total);
-              progress = Math.max(0, Math.min(100, (elapsed / total) * 100));
-            }
-            return {
-              id: r.id,
-              plan_name: name,
-              amount: Number(r.amount || 0),
-              status: r.status || "active",
-              started_at: r.started_at,
-              progress,
-            };
-          });
-
-          setPortfolio(shaped);
-          const inv = shaped.reduce((s, p) => s + Number(p.amount || 0), 0);
-          setInvested(inv);
-        }
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        if (!alive) return;
+        setStats({ last30d: 0, plansCount: count ?? 0 });
+      } catch (err) {
+        console.error(err);
+        setError("مشکلی پیش آمد. لطفاً دوباره تلاش کنید.");
       } finally {
         if (alive) setLoading(false);
       }
     })();
-
     return () => {
       alive = false;
     };
   }, []);
 
-  const totalPlans = portfolio.length;
-  const activePlans = useMemo(
-    () => portfolio.filter((p) => p.status === "active").length,
-    [portfolio]
-  );
+  if (loading) {
+    return (
+      <div className="nv-container">
+        <div className="glass p-6 rounded-xl text-slate-200 text-center">در حال بارگذاری داشبورد…</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="nv-container">
+        <div className="glass p-6 rounded-xl text-slate-200">
+          <p>برای مشاهده داشبورد وارد شوید.</p>
+          <div className="mt-4">
+            <Link className="nv-btn nv-btn-primary" href="/login">ورود</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="nv-container">
-      {/* عنوان */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>داشبورد</h1>
-        <div className="muted" style={{ fontSize: 14 }}>
-          {me?.email || "—"}
-        </div>
-      </div>
-
-      {/* KPI ها */}
-      <div className="grid-kpi">
-        <div className="card glass">
-          <div className="kpi-label">موجودی کیف‌پول</div>
-          <div className="kpi-value">{loading ? "…" : `${rial(balance)} تومان`}</div>
-          <div className="kpi-actions">
-            <Link href="/deposit" className="btn btn-primary">واریز</Link>
-            <Link href="/dashboard/withdraw" className="btn">برداشت</Link>
-          </div>
-        </div>
-
-        <div className="card glass">
-          <div className="kpi-label">سرمایه‌گذاری‌ها</div>
-          <div className="kpi-value">
-            {loading ? "…" : `${rial(invested)} تومان`}
-          </div>
-          <div className="tiny muted">پلن‌های فعال: {activePlans}/{totalPlans}</div>
-        </div>
-
-        <div className="card glass">
-          <div className="kpi-label">سود ۳۰ روز اخیر</div>
-          <div className="kpi-value">{loading ? "…" : `${rial(monthProfit)} تومان`}</div>
-          <div className="tiny muted">با به‌روزرسانی خودکار</div>
-        </div>
-
-        <div className="card glass">
-          <div className="kpi-label">اقدامات سریع</div>
-          <div className="kpi-qa">
-            <Link href="/plans" className="btn">خرید پلن</Link>
-            <Link href="/dashboard/transactions" className="btn">تراکنش‌ها</Link>
-            <Link href="/profile" className="btn">پروفایل</Link>
-          </div>
-        </div>
-      </div>
-
-      {/* کیف پول – کارت مجزا و شکیل */}
-      <div className="card glass wallet-card">
-        <div className="wallet-head">
-          <div>
-            <div className="muted tiny">کیف‌پول</div>
-            <div className="wallet-balance">{loading ? "…" : `${rial(balance)} تومان`}</div>
-          </div>
-          <div className="wallet-actions">
-            <Link href="/deposit" className="btn btn-primary">واریز دستی (کریپتو)</Link>
-            <Link href="/dashboard/withdraw" className="btn">درخواست برداشت</Link>
-          </div>
-        </div>
-        <div className="muted tiny">
-          * پس از واریز، اسکرین‌شات یا TxHash را در صفحه واریز بارگذاری کنید تا توسط ادمین تایید و کیف‌پول شما شارژ شود.
-        </div>
-      </div>
-
-      {/* پرتفوی */}
-      <div className="section-title" style={{ marginTop: 24 }}>پرتفوی</div>
-      {portfolio.length === 0 ? (
-        <div className="card glass" style={{ textAlign: "center" }}>
-          هنوز سرمایه‌گذاری فعالی ندارید.{" "}
-          <Link href="/plans" className="nv-link">همین حالا شروع کنید →</Link>
-        </div>
-      ) : (
-        <div className="portfolio-grid">
-          {portfolio.map((p) => (
-            <div key={p.id} className="card glass">
-              <div className="row-between">
-                <div style={{ fontWeight: 600 }}>{p.plan_name}</div>
-                <div className="badge">{p.status === "active" ? "فعال" : "غیرفعال"}</div>
-              </div>
-              <div className="muted tiny">مبلغ: {rial(p.amount)} تومان</div>
-              <div className="progress">
-                <div className="progress-bar" style={{ width: `${Math.round(p.progress)}%` }} />
-              </div>
-              <div className="row-between tiny muted">
-                <span>پیشرفت</span>
-                <span>%{Math.round(p.progress)}</span>
-              </div>
-            </div>
-          ))}
+      {error && (
+        <div className="glass rounded-xl p-4 mb-4 text-red-300">
+          {error}
         </div>
       )}
 
-      {/* تراکنش‌های اخیر */}
-      <div className="section-title" style={{ marginTop: 24 }}>
-        تراکنش‌های اخیر
-      </div>
-      <div className="card glass">
-        {lastTx.length === 0 ? (
-          <div className="muted tiny">تراکنشی ثبت نشده است.</div>
-        ) : (
-          <div className="table">
-            <div className="thead">
-              <div>نوع</div>
-              <div>مبلغ</div>
-              <div>وضعیت</div>
-              <div>تاریخ</div>
-            </div>
-            {lastTx.map((t) => (
-              <div key={t.id} className="trow">
-                <div>{t.type === "deposit" ? "واریز" : t.type === "withdraw" ? "برداشت" : t.type === "profit" ? "سود" : t.type}</div>
-                <div>{rial(t.amount)} تومان</div>
-                <div className={`chip ${t.status}`}>{statusChip(t.status)}</div>
-                <div className="muted tiny">
-                  {new Date(t.created_at).toLocaleString("fa-IR")}
-                </div>
-              </div>
-            ))}
+      {/* Top tiles */}
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="glass rounded-xl p-4">
+          <div className="text-slate-400 text-sm">موجودی کیف‌پول (USDT)</div>
+          <div className="text-2xl mt-2 font-bold">{wallet.usdt.toFixed(2)}</div>
+          <div className="mt-4 flex gap-8">
+            <Link href="/deposit" className="nv-btn nv-btn-primary">واریز</Link>
+            <Link href="/dashboard/withdraw" className="nv-btn">برداشت</Link>
           </div>
-        )}
-        <div style={{ textAlign: "left", marginTop: 10 }}>
-          <Link href="/dashboard/transactions" className="nv-link">نمایش همه →</Link>
+        </div>
+
+        <div className="glass rounded-xl p-4">
+          <div className="text-slate-400 text-sm">سود ۳۰ روز اخیر</div>
+          <div className="text-2xl mt-2 font-bold">{stats.last30d.toFixed(2)} USDT</div>
+        </div>
+
+        <div className="glass rounded-xl p-4">
+          <div className="text-slate-400 text-sm">سرمایه‌گذاری‌ها</div>
+          <div className="text-2xl mt-2 font-bold">{stats.plansCount}</div>
+          <div className="mt-4">
+            <Link href="/plans" className="nv-btn">مشاهده پلن‌ها</Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Referral */}
+      <ReferralCard />
+
+      {/* Quick actions */}
+      <div className="grid md:grid-cols-2 gap-4 mt-6">
+        <div className="glass rounded-xl p-4">
+          <div className="text-slate-300 font-semibold mb-2">اقدامات سریع</div>
+          <div className="flex gap-3 flex-wrap">
+            <Link href="/plans" className="nv-btn">خرید پلن</Link>
+            <Link href="/dashboard/transactions" className="nv-btn">تراکنش‌ها</Link>
+            <Link href="/dashboard/profile" className="nv-btn">پروفایل</Link>
+          </div>
+        </div>
+        <div className="glass rounded-xl p-4">
+          <div className="text-slate-300 font-semibold mb-2">واریز دستی (کریپتو)</div>
+          <p className="text-slate-400 text-sm">
+            پس از واریز، اسکرین‌شات یا TxHash را در صفحه واریز بارگذاری کنید تا توسط ادمین تأیید و کیف‌پول شارژ شود.
+          </p>
+          <div className="mt-3">
+            <Link href="/deposit" className="nv-btn nv-btn-primary">صفحه واریز</Link>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-{/* کارت کیف‌پول USDT */}
-<div className="p-4 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 shadow-md border border-gray-700">
-  <h3 className="text-sm font-semibold text-gray-400 mb-1">موجودی کیف‌پول</h3>
-  <p className="text-xl font-bold text-white">{walletBalance} USDT</p>
-  <div className="flex gap-2 mt-3">
-    <button className="px-3 py-1 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
-      واریز
-    </button>
-    <button className="px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700">
-      برداشت
-    </button>
-  </div>
-</div>
