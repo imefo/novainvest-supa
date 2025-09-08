@@ -1,123 +1,74 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function SignUpPage() {
+export default function SignupPage() {
   const router = useRouter();
+  const search = useSearchParams();
+  const inviteCode = (search?.get("ref") || "").trim();
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [pwd, setPwd] = useState("");
-  const [showPwd, setShowPwd] = useState(false);
+  const [pass, setPass] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
 
-  async function handleSubmit(e) {
+  async function onSignup(e) {
     e.preventDefault();
     setErr("");
-    setOk("");
-    if (!fullName.trim() || !email.trim() || !pwd) {
-      setErr("همه فیلدها را کامل کنید.");
-      return;
-    }
+    setLoading(true);
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.signUp({
-        email,
-        password: pwd,
-        options: {
-          data: { full_name: fullName },
-          emailRedirectTo:
-            typeof window !== "undefined"
-              ? `${location.origin}/login`
-              : undefined,
-        },
+      const { data, error } = await supabase.auth.signUp({
+        email, password: pass,
+        options: { data: { full_name: fullName } },
       });
       if (error) throw error;
 
-      setOk(
-        "ثبت‌نام انجام شد! ایمیل خود را برای تأیید بررسی کنید، سپس وارد شوید."
-      );
-      // بعد از چند ثانیه کاربر را به لاگین ببریم
-      setTimeout(() => router.push("/login"), 2200);
+      const newUser = data?.user;
+      if (newUser?.id && inviteCode) {
+        await supabase.rpc("apply_referral", {
+          invited: newUser.id,
+          code: inviteCode,
+          // bonus_amount: 0.5  // در صورت تمایل می‌توانی override کنی
+        });
+      }
+
+      router.push("/dashboard");
     } catch (e) {
-      setErr(e.message ?? "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.");
-    } finally {
-      setLoading(false);
-    }
+      setErr(e.message || "خطا در ثبت‌نام");
+    } finally { setLoading(false); }
   }
 
   return (
-    <main className="nv-container auth-page">
-      <div className="auth-card glass-xl">
-        <div className="auth-head">
-          <h1>ثبت‌نام</h1>
-          <p className="muted">حساب جدید بسازید.</p>
+    <div className="nv-container" style={{ display:"grid", placeItems:"center", minHeight:"65vh" }}>
+      <form onSubmit={onSignup} className="card glass" style={{ width:"100%", maxWidth:520 }}>
+        <div className="row-between" style={{ marginBottom:8 }}>
+          <div style={{ fontSize:22, fontWeight:800 }}>ثبت‌نام</div>
+          {inviteCode && <div className="badge">کد معرف: <b>{inviteCode}</b></div>}
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form" noValidate>
-          <label className="fld">
-            <span>نام و نام خانوادگی</span>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="مثلاً علی رضایی"
-              dir="rtl"
-            />
-          </label>
+        {err && <div className="chip failed" style={{ marginBottom:8 }}>{err}</div>}
 
-          <label className="fld">
-            <span>ایمیل</span>
-            <input
-              type="email"
-              inputMode="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@mail.com"
-              dir="ltr"
-            />
-          </label>
+        <label className="muted tiny">نام و نام خانوادگی</label>
+        <input className="glass-input" value={fullName} onChange={(e)=>setFullName(e.target.value)} required />
 
-          <label className="fld">
-            <span>رمز عبور</span>
-            <div className="pwd-wrap">
-              <input
-                type={showPwd ? "text" : "password"}
-                value={pwd}
-                onChange={(e) => setPwd(e.target.value)}
-                placeholder="حداقل ۸ کاراکتر"
-                dir="ltr"
-              />
-              <button
-                type="button"
-                className="nv-btn nv-btn-ghost pwd-toggle"
-                onClick={() => setShowPwd((s) => !s)}
-                aria-label="نمایش/مخفی کردن رمز"
-              >
-                {showPwd ? "مخفی" : "نمایش"}
-              </button>
-            </div>
-          </label>
+        <label className="muted tiny" style={{ marginTop:10 }}>ایمیل</label>
+        <input className="glass-input" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required />
 
-          {err ? <p className="alert error">{err}</p> : null}
-          {ok ? <p className="alert ok">{ok}</p> : null}
+        <label className="muted tiny" style={{ marginTop:10 }}>رمز عبور</label>
+        <input className="glass-input" type="password" value={pass} onChange={(e)=>setPass(e.target.value)} minLength={6} required />
 
-          <button className="nv-btn nv-btn-primary nv-btn-block" disabled={loading}>
-            {loading ? "در حال ایجاد حساب..." : "ایجاد حساب"}
-          </button>
-        </form>
+        <button className="btn btn-primary" disabled={loading} style={{ width:"100%", marginTop:12 }}>
+          {loading ? "در حال ایجاد حساب…" : "ایجاد حساب"}
+        </button>
 
-        <div className="auth-foot">
-          <span className="muted">حساب دارید؟</span>
-          <Link className="nv-link strong" href="/login">
-            ورود
-          </Link>
+        <div style={{ marginTop:10, textAlign:"center" }}>
+          حساب دارید؟ <Link href="/login" className="nv-link">ورود</Link>
         </div>
-      </div>
-    </main>
+      </form>
+    </div>
   );
 }
