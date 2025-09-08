@@ -1,4 +1,17 @@
 "use client";
+import { useEffect } from "react";
+import { setRefCookie } from "@/lib/referral";
+
+// ... کدهای قبلی
+
+useEffect(() => {
+  try {
+    const url = new URL(window.location.href);
+    const ref = url.searchParams.get("ref");
+    if (ref) setRefCookie(ref, 30);
+  } catch {}
+}, []);
+"use client";
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
