@@ -1,11 +1,8 @@
 "use client";
-import ReferralCard from "@/components/ReferralCard";
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-
+import ReferralCard from "@/components/ReferralCard";
 // --- helpers ---
 const rial = (n) =>
   new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(
@@ -22,7 +19,6 @@ const statusChip = (s) => {
   };
   return map[s] || s;
 };
-
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState(null);

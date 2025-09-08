@@ -1,17 +1,18 @@
 "use client";
-import { useEffect } from "react";
+
+export const dynamic = "force-dynamic";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { setRefCookie } from "@/lib/referral";
 
-// ... کدهای قبلی
-
+// ذخیره ref در کوکی (بعد از importها، نه قبلش)
 useEffect(() => {
   try {
-    const url = new URL(window.location.href);
-    const ref = url.searchParams.get("ref");
+    const ref = new URL(window.location.href).searchParams.get("ref");
     if (ref) setRefCookie(ref, 30);
   } catch {}
 }, []);
-"use client";
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
