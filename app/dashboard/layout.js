@@ -1,5 +1,8 @@
-'use client'
-import { useEffect, useState } from 'react'
+"use client";
+
+export default function DashboardLayout({ children }) {
+  return <div className="nv-container">{children}</div>;
+}import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
