@@ -1,13 +1,15 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+
+type CodeRow = { id: string; user_id: string; code: string; created_at: string };
+const site = typeof window !== "undefined" ? window.location.origin : "https://novainvest-supa3.vercel.app";
 
 export default function ReferralCard() {
   const [loading, setLoading] = useState(true);
   const [link, setLink] = useState<string>("");
   const [count, setCount] = useState<number>(0);
-  const [err, setErr] = useState("");
+  const [err, setErr] = useState<string>("");
 
   useEffect(() => {
     let alive = true;
@@ -16,71 +18,88 @@ export default function ReferralCard() {
         setErr("");
         setLoading(true);
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setLink(""); return; }
+        // 1) کاربر
+        const { data: userData, error: eUser } = await supabase.auth.getUser();
+        if (eUser) throw eUser;
+        const user = userData.user;
+        if (!user) {
+          setErr("ابتدا وارد حساب شوید.");
+          return;
+        }
 
-        // دریافت/ایجاد کُد
+        // 2) کد دعوت: اگر نبود بساز
         const { data: codeRow, error: e1 } = await supabase
           .from("referral_codes")
-          .select("code")
+          .select("*")
           .eq("user_id", user.id)
-          .maybeSingle();
+          .maybeSingle<CodeRow>();
         if (e1) throw e1;
 
         let code = codeRow?.code;
         if (!code) {
-          const rnd = Math.random().toString(36).slice(2, 8);
-          code = `${user.id.slice(0, 6)}-${rnd}`.toUpperCase();
-          const { error: eIns } = await supabase.from("referral_codes").insert({ user_id: user.id, code });
+          // تولید کد کوتاه و پایدار
+          const rnd = Math.random().toString(36).slice(2, 8).toUpperCase();
+          code = `${user.id.slice(0, 6)}-${rnd}`;
+          const { error: eIns } = await supabase.from("referral_codes").insert({
+            user_id: user.id,
+            code,
+          });
           if (eIns) throw eIns;
         }
 
-        // تعداد دعوت‌های تأییدشده
-        const { count } = await supabase
+        // 3) تعداد دعوت‌های تأییدشده
+        const { count: c, error: eCnt } = await supabase
           .from("referrals")
           .select("*", { count: "exact", head: true })
-          .eq("referrer_id", user.id)
-          .eq("accepted", true);
-
-        // ساخت لینک
-        const base = typeof window !== "undefined" ? window.location.origin : "https://novainvest-supa3.vercel.app";
-        const url = new URL(base);
-        url.pathname = "/signup";
-        url.searchParams.set("ref", code);
+          .eq("referrer_user_id", user.id)
+          .eq("status", "approved");
+        if (eCnt) throw eCnt;
 
         if (!alive) return;
-        setLink(url.toString());
-        setCount(count ?? 0);
-      } catch (e:any) {
-        console.error(e);
-        setErr("خطا در بارگذاری لینک دعوت");
+        setLink(`${site}/signup?ref=${encodeURIComponent(code)}`);
+        setCount(c ?? 0);
+      } catch (e: any) {
+        if (!alive) return;
+        setErr(e?.message || "خطا در بارگذاری لینک دعوت");
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   return (
-    <div className="card">
+    <div className="card glass">
       <div className="card-head">
         <span>🎁 لینک دعوت</span>
-        <span className="muted">پاداش هر دعوت موفق: 0.50 USDT</span>
+        <small className="muted">پاداش هر دعوت موفق: 0.50 USDT</small>
       </div>
 
-      {err && <div className="alert error">{err}</div>}
-
       {loading ? (
-        <div className="muted">در حال بارگذاری…</div>
+        <div className="skeleton h-10" />
+      ) : err ? (
+        <div className="alert error">{err}</div>
       ) : (
         <>
-          <div className="invite-row">
-            <input className="invite-input" value={link} readOnly />
-            <button className="nv-btn nv-btn-primary" onClick={() => navigator.clipboard.writeText(link)}>کپی</button>
+          <div className="row">
+            <input className="input mono" value={link} readOnly />
+            <button
+              className="btn"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(link);
+                  alert("کپی شد ✅");
+                } catch {
+                  alert("کپی نشد؛ دستی کپی کنید.");
+                }
+              }}
+            >
+              کپی
+            </button>
           </div>
-          <div className="muted" style={{ marginTop: 8 }}>
-            دعوت‌های تأییدشده: {count}
-          </div>
+          <div className="muted">دعوت‌های تأییدشده: {count}</div>
         </>
       )}
     </div>
