@@ -1,58 +1,87 @@
+// app/dashboard/layout.js
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+
+// آیتم‌های سایدبار؛ «مسابقه» اضافه شد
+const NAV = [
+  { href: "/dashboard", label: "مرور کلی" },
+  { href: "/dashboard/transactions", label: "تراکنش‌ها" },
+  { href: "/dashboard/plans", label: "پلن‌ها" },
+  { href: "/dashboard/wallet", label: "کیف پول" },
+  { href: "/dashboard/competition", label: "مسابقه 🎯" }, // ← جدید
+];
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
-  const [email, setEmail] = useState("");
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
       if (!alive) return;
-      setEmail(data?.user?.email || "");
+      if (error) return;
+      setUser(data?.user ?? null);
     })();
-    return () => (alive = false);
+    return () => { alive = false; };
   }, []);
 
-  const Item = ({ href, label }) => {
-    const active = pathname === href;
-    return (
-      <Link
-        href={href}
-        className={`
-          lux-btn w-full ${active ? "is-active" : ""}
-        `}
-      >
-        {label}
-      </Link>
-    );
-  };
-
   return (
-    <div className="lux-shell">
-      {/* sidebar */}
-      <aside className="lux-aside">
-        <div className="lux-brand">
-          <span className="lux-dot" /> NovaInvest
+    <div className="dash-wrap">
+      <aside className="dash-sidebar">
+        <div className="dash-sidebar-inner">
+          <div className="dash-brand">
+            <Link href="/" className="nv-brand-link">
+              <span className="nv-brand-title">NovaInvest</span>
+            </Link>
+          </div>
+
+          <nav className="dash-nav">
+            {NAV.map((item) => {
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`dash-nav-link ${active ? "active" : ""}`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="dash-user-box">
+            {user ? (
+              <div className="dash-user">
+                <div className="name">{user.email ?? "کاربر"}</div>
+                <form
+                  action="#"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    await supabase.auth.signOut();
+                    window.location.href = "/";
+                  }}
+                >
+                  <button className="nv-btn" type="submit">خروج</button>
+                </form>
+              </div>
+            ) : (
+              <Link className="nv-btn nv-btn-primary" href="/login">ورود / ثبت‌نام</Link>
+            )}
+          </div>
         </div>
-        <div className="lux-email">{email}</div>
-        <nav className="lux-nav">
-          <Item href="/dashboard" label="داشبورد" />
-          <Item href="/dashboard/transactions" label="تراکنش‌ها" />
-          <Item href="/plans" label="پلن‌ها" />
-          <Item href="/deposit" label="واریز" />
-          <Link href="/logout" className="lux-btn w-full danger">خروج</Link>
-        </nav>
       </aside>
 
-      {/* main */}
-      <main className="lux-main">{children}</main>
+      <main className="dash-main">
+        <div className="nv-container">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }
-<Link className="nv-btn" href="/dashboard/contest">مسابقه</Link>
