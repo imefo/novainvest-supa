@@ -55,3 +55,4 @@ export default function DashboardLayout({ children }) {
     </div>
   );
 }
+<Link className="nv-btn" href="/dashboard/contest">مسابقه</Link>
