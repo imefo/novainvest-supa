@@ -158,3 +158,51 @@ body {
 .hero .hero-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; align-items: start; }
 @media (max-width: 1000px){ .hero .hero-grid { grid-template-columns: 1fr; } }
 .form { display: grid; gap: 10px; max-width: 640px; }
+/* ==== LUX DASHBOARD ==== */
+.lux-shell{max-width:1200px;margin:0 auto;padding:24px 16px;display:grid;grid-template-columns:220px 1fr;gap:16px}
+.lux-aside{backdrop-filter: blur(8px) saturate(140%);background:rgba(17,21,34,.55);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;position:sticky;top:84px}
+.lux-brand{display:flex;align-items:center;gap:8px;font-weight:800;color:#e5e7eb;margin-bottom:6px}
+.lux-dot{width:9px;height:9px;border-radius:999px;background:linear-gradient(135deg,#8b5cf6,#22d3ee)}
+.lux-email{font-size:12px;color:#94a3b8;margin-bottom:14px;direction:ltr}
+.lux-nav{display:grid;gap:8px}
+.lux-main{min-height:60vh}
+.lux-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e5e7eb;text-decoration:none}
+.lux-btn:hover{background:rgba(255,255,255,.12)}
+.lux-btn.is-active{background:linear-gradient(135deg,#7c3aed,#3b82f6);border:none}
+.lux-btn.sm{padding:8px 10px;font-size:13px}
+.lux-btn.xl{padding:12px 18px;font-size:15px;border-radius:12px}
+.lux-btn.primary{background:linear-gradient(135deg,#7c3aed,#3b82f6);border:none;color:#fff}
+.lux-btn.danger{background:rgba(255,85,85,.12);border-color:rgba(255,85,85,.35)}
+
+.lux-stack{display:grid;gap:16px}
+.lux-hero{border:1px solid rgba(255,255,255,.08);border-radius:14px;background:radial-gradient(1200px 600px at 80% -10%, rgba(124,58,237,.22), transparent), rgba(17,21,34,.55);backdrop-filter:blur(8px) saturate(140%);padding:18px}
+.lux-hero .title{font-weight:800;color:#e5e7eb;font-size:22px;margin-bottom:6px}
+.lux-hero .sub{color:#9fb0c8;font-size:13px}
+.lux-hero .actions{display:flex;gap:8px;margin-top:10px}
+.lux-chip{padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.07);color:#e5e7eb;text-decoration:none;border:1px solid rgba(255,255,255,.12)}
+.lux-chip:hover{background:rgba(255,255,255,.12)}
+
+.lux-metrics{display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.lux-metric{position:relative;border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,.08);background:rgba(17,21,34,.55);backdrop-filter:blur(8px) saturate(140%)}
+.lux-metric.g1{background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(17,21,34,.55))}
+.lux-metric.g2{background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(17,21,34,.55))}
+.lux-metric.g3{background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(17,21,34,.55))}
+.lux-metric .m-title{color:#9fb0c8;font-size:13px;margin-bottom:6px}
+.lux-metric .m-value{font-weight:800;color:#e5e7eb;font-size:24px;letter-spacing:.2px;min-height:28px}
+.lux-metric .m-value .suffix{font-size:12px;color:#9fb0c8;margin-right:6px}
+.metric-actions{display:flex;gap:8px;margin-top:10px}
+.skeleton{display:inline-block;width:120px;height:22px;border-radius:6px;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.16),rgba(255,255,255,.06));background-size:200% 100%;animation:shimmer 1.6s linear infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.lux-two{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.lux-cta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(17,21,34,.55)}
+.lux-cta .text{color:#cbd5e1}
+
+.lux-alert{padding:12px;border-radius:12px;border:1px solid rgba(255,90,90,.35);background:rgba(255,90,90,.08);color:#fecaca}
+
+@media (max-width: 960px){
+  .lux-shell{grid-template-columns:1fr}
+  .lux-aside{position:relative;top:auto}
+  .lux-metrics{grid-template-columns:1fr}
+  .lux-two{grid-template-columns:1fr}
+}

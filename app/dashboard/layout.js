@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function DashboardLayout({ children }) {
+  const pathname = usePathname();
   const [email, setEmail] = useState("");
 
   useEffect(() => {
@@ -17,37 +19,39 @@ export default function DashboardLayout({ children }) {
     return () => (alive = false);
   }, []);
 
-  return (
-    <div
-      className="nv-container"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "220px 1fr",
-        gap: 16,
-        alignItems: "start",
-      }}
-    >
-      {/* تنها سایدبار چپ */}
-      <aside
-        className="nv-card"
-        style={{ position: "sticky", top: 84, alignSelf: "start" }}
+  const Item = ({ href, label }) => {
+    const active = pathname === href;
+    return (
+      <Link
+        href={href}
+        className={`
+          lux-btn w-full ${active ? "is-active" : ""}
+        `}
       >
-        <div className="nv-card-title">NovaInvest</div>
-        <div className="nv-muted" style={{ marginBottom: 12 }}>
-          {email}
-        </div>
+        {label}
+      </Link>
+    );
+  };
 
-        <nav className="nv-stack" style={{ display: "grid", gap: 10 }}>
-          <Link className="nv-btn w-full" href="/dashboard">داشبورد</Link>
-          <Link className="nv-btn w-full" href="/dashboard/transactions">تراکنش‌ها</Link>
-          <Link className="nv-btn w-full" href="/plans">پلن‌ها</Link>
-          <Link className="nv-btn w-full" href="/deposit">واریز</Link>
-          <Link className="nv-btn w-full" href="/logout">خروج</Link>
+  return (
+    <div className="lux-shell">
+      {/* sidebar */}
+      <aside className="lux-aside">
+        <div className="lux-brand">
+          <span className="lux-dot" /> NovaInvest
+        </div>
+        <div className="lux-email">{email}</div>
+        <nav className="lux-nav">
+          <Item href="/dashboard" label="داشبورد" />
+          <Item href="/dashboard/transactions" label="تراکنش‌ها" />
+          <Item href="/plans" label="پلن‌ها" />
+          <Item href="/deposit" label="واریز" />
+          <Link href="/logout" className="lux-btn w-full danger">خروج</Link>
         </nav>
       </aside>
 
-      {/* محتوای اصلی */}
-      <main>{children}</main>
+      {/* main */}
+      <main className="lux-main">{children}</main>
     </div>
   );
 }

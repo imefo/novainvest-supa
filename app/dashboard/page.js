@@ -1,17 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import ReferralCard from "@/components/ReferralCard";
 import WalletCard from "@/components/walletCard";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
   const [wallet, setWallet] = useState(0);
   const [profit30d, setProfit30d] = useState(0);
   const [invested, setInvested] = useState(0);
-  const [err, setErr] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -22,7 +22,7 @@ export default function DashboardPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // موجودی کیف‌پول (اگر currency نداریم، فقط مقدار پیش‌فرض رو می‌خوانیم)
+        // کیف‌پول
         const { data: bal } = await supabase
           .from("user_balances")
           .select("amount")
@@ -31,30 +31,30 @@ export default function DashboardPage() {
         if (!alive) return;
         setWallet(bal?.amount ?? 0);
 
-        // جمع سرمایه‌گذاری‌های فعال (اگر ویو/ستون‌ها آماده‌ست)
-        const { data: inv } = await supabase
+        // سرمایه‌گذاری‌های فعال
+        const { data: ups } = await supabase
           .from("user_plans")
-          .select("amount")
+          .select("amount,status")
           .eq("user_id", user.id)
           .eq("status", "active");
+        const investedSum = (ups ?? []).reduce((s, r) => s + (r.amount || 0), 0);
         if (!alive) return;
-        const sumInvested = (inv ?? []).reduce((s, r) => s + (r.amount || 0), 0);
-        setInvested(sumInvested);
+        setInvested(investedSum);
 
-        // سود ۳۰ روز اخیر (ساده و محافظه‌کارانه)
+        // سود ۳۰ روز اخیر
+        const since = new Date(Date.now() - 30 * 86400000).toISOString();
         const { data: txs } = await supabase
           .from("transactions")
           .select("amount,type,created_at")
           .eq("user_id", user.id)
           .eq("type", "profit")
-          .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString());
+          .gte("created_at", since);
+        const p = (txs ?? []).reduce((s, r) => s + (r.amount || 0), 0);
         if (!alive) return;
-        const sumProfit = (txs ?? []).reduce((s, r) => s + (r.amount || 0), 0);
-        setProfit30d(sumProfit);
+        setProfit30d(p);
       } catch (e) {
-        if (!alive) return;
-        setErr("مشکل پیش آمد. لطفاً دوباره تلاش کنید.");
         console.error(e);
+        if (alive) setErr("مشکلی پیش آمد. لطفاً دوباره تلاش کنید.");
       } finally {
         if (alive) setLoading(false);
       }
@@ -63,73 +63,81 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="nv-stack" style={{ display: "grid", gap: 16 }}>
-      {/* عنوان */}
-      <div className="nv-card-title" style={{ fontSize: 22, marginBottom: 4 }}>
-        داشبورد
-      </div>
-      {err && (
-        <div className="nv-card" style={{ borderColor: "rgba(255,80,80,.4)" }}>
-          {err}
+    <div className="lux-stack">
+      {/* Hero */}
+      <section className="lux-hero">
+        <div className="title">داشبورد</div>
+        <div className="sub">وضعیت کلی حساب، کیف‌پول و سرمایه‌گذاری‌ها</div>
+        <div className="actions">
+          <Link className="lux-chip" href="/plans">خرید پلن</Link>
+          <Link className="lux-chip" href="/dashboard/transactions">تراکنش‌ها</Link>
         </div>
-      )}
+      </section>
 
-      {/* سه کاشی خلاصه */}
-      <div
-        className="nv-grid"
-        style={{
-          display: "grid",
-          gap: 12,
-          gridTemplateColumns: "repeat(3, minmax(0,1fr))",
-        }}
-      >
-        <div className="nv-card">
-          <div className="nv-muted">موجودی کیف‌پول (USDT)</div>
-          <div className="nv-number">{wallet.toFixed(2)}</div>
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <Link className="nv-btn" href="/deposit">واریز</Link>
-            <Link className="nv-btn" href="/withdraw">برداشت</Link>
-          </div>
-        </div>
+      {/* خطا */}
+      {err && <div className="lux-alert">{err}</div>}
 
-        <div className="nv-card">
-          <div className="nv-muted">سود ۳۰ روز اخیر</div>
-          <div className="nv-number">{profit30d.toFixed(2)} USDT</div>
-          <div className="nv-muted" style={{ fontSize: 12 }}>با بازتوزیع خودکار</div>
-        </div>
-
-        <div className="nv-card">
-          <div className="nv-muted">سرمایه‌گذاری‌ها</div>
-          <div className="nv-number">{invested.toFixed(2)} USDT</div>
-          <Link className="nv-btn" href="/plans" style={{ marginTop: 10 }}>
-            مشاهده پلن‌ها
-          </Link>
-        </div>
-      </div>
+      {/* متریک‌ها */}
+      <section className="lux-metrics">
+        <Metric
+          title="موجودی کیف‌پول (USDT)"
+          value={wallet}
+          gradient="g1"
+          actions={
+            <div className="metric-actions">
+              <Link className="lux-btn sm" href="/deposit">واریز</Link>
+              <Link className="lux-btn sm" href="/withdraw">برداشت</Link>
+            </div>
+          }
+          loading={loading}
+        />
+        <Metric
+          title="سود ۳۰ روز اخیر"
+          value={profit30d}
+          suffix="USDT"
+          gradient="g2"
+          loading={loading}
+        />
+        <Metric
+          title="سرمایه‌گذاری‌های فعال"
+          value={invested}
+          suffix="USDT"
+          gradient="g3"
+          actions={<Link className="lux-btn sm" href="/plans">مشاهده پلن‌ها</Link>}
+          loading={loading}
+        />
+      </section>
 
       {/* کیف‌پول + دعوت */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 12,
-          alignItems: "start",
-        }}
-      >
+      <section className="lux-two">
         <WalletCard />
         <ReferralCard />
-      </div>
+      </section>
 
-      {/* شورتکات‌ها */}
-      <div
-        className="nv-card"
-        style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
-      >
-        <Link className="nv-btn" href="/plans">خرید پلن</Link>
-        <Link className="nv-btn" href="/dashboard/transactions">تراکنش‌ها</Link>
-        <Link className="nv-btn" href="/profile">پروفایل</Link>
-        <Link className="nv-btn" href="/deposit">واریز دستی (کریپتو)</Link>
+      {/* CTA پایین صفحه */}
+      <section className="lux-cta">
+        <div className="text">
+          آماده‌ای درآمدت رو شروع کنی؟ پلن مناسب رو انتخاب کن.
+        </div>
+        <Link className="lux-btn xl primary" href="/plans">شروع سرمایه‌گذاری</Link>
+      </section>
+    </div>
+  );
+}
+
+function Metric({ title, value, suffix = "", gradient = "g1", actions, loading }) {
+  return (
+    <div className={`lux-metric ${gradient}`}>
+      <div className="m-title">{title}</div>
+      <div className="m-value">
+        {loading ? <span className="skeleton" /> : (
+          <>
+            {Number(value || 0).toFixed(2)}{" "}
+            <span className="suffix">{suffix}</span>
+          </>
+        )}
       </div>
+      {actions && <div className="m-actions">{actions}</div>}
     </div>
   );
 }
