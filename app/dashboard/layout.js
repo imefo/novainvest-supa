@@ -1,4 +1,3 @@
-// app/dashboard/layout.js
 "use client";
 
 import Link from "next/link";
@@ -7,11 +6,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 const NAV = [
+  { href: "/dashboard/profile", label: "پروفایل" },
   { href: "/dashboard", label: "داشبورد" },
   { href: "/dashboard/transactions", label: "تراکنش‌ها" },
   { href: "/dashboard/plans", label: "پلن‌ها" },
-  { href: "/dashboard/wallet", label: "واریز" },
-  { href: "/dashboard/competition", label: "مسابقه 🎯" },
+  { href: "/dashboard/wallet", label: "واریز / برداشت" },
 ];
 
 export default function Layout({ children }) {
@@ -34,12 +33,12 @@ export default function Layout({ children }) {
           <Link href="/" className="dash-brand">NovaInvest</Link>
 
           <nav className="dash-nav">
-            {NAV.map((item) => {
-              const active = pathname === item.href;
+            {NAV.map((it) => {
+              const active = pathname === it.href;
               return (
-                <Link key={item.href} href={item.href}
+                <Link key={it.href} href={it.href}
                       className={`dash-nav-link ${active ? "active" : ""}`}>
-                  {item.label}
+                  {it.label}
                 </Link>
               );
             })}
@@ -61,11 +60,7 @@ export default function Layout({ children }) {
         </div>
       </aside>
 
-      <main className="dash-main">
-        <div className="nv-container">
-          {children}
-        </div>
-      </main>
+      <main className="dash-main"><div className="nv-container">{children}</div></main>
     </div>
   );
 }
