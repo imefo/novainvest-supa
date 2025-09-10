@@ -6,26 +6,23 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-// آیتم‌های سایدبار؛ «مسابقه» اضافه شد
 const NAV = [
-  { href: "/dashboard", label: "مرور کلی" },
+  { href: "/dashboard", label: "داشبورد" },
   { href: "/dashboard/transactions", label: "تراکنش‌ها" },
   { href: "/dashboard/plans", label: "پلن‌ها" },
-  { href: "/dashboard/wallet", label: "کیف پول" },
-  { href: "/dashboard/competition", label: "مسابقه 🎯" }, // ← جدید
+  { href: "/dashboard/wallet", label: "واریز" },
+  { href: "/dashboard/competition", label: "مسابقه 🎯" },
 ];
 
-export default function DashboardLayout({ children }) {
+export default function Layout({ children }) {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (!alive) return;
-      if (error) return;
-      setUser(data?.user ?? null);
+      const { data } = await supabase.auth.getUser();
+      if (alive) setUser(data?.user ?? null);
     })();
     return () => { alive = false; };
   }, []);
@@ -34,21 +31,14 @@ export default function DashboardLayout({ children }) {
     <div className="dash-wrap">
       <aside className="dash-sidebar">
         <div className="dash-sidebar-inner">
-          <div className="dash-brand">
-            <Link href="/" className="nv-brand-link">
-              <span className="nv-brand-title">NovaInvest</span>
-            </Link>
-          </div>
+          <Link href="/" className="dash-brand">NovaInvest</Link>
 
           <nav className="dash-nav">
             {NAV.map((item) => {
               const active = pathname === item.href;
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`dash-nav-link ${active ? "active" : ""}`}
-                >
+                <Link key={item.href} href={item.href}
+                      className={`dash-nav-link ${active ? "active" : ""}`}>
                   {item.label}
                 </Link>
               );
@@ -57,21 +47,15 @@ export default function DashboardLayout({ children }) {
 
           <div className="dash-user-box">
             {user ? (
-              <div className="dash-user">
-                <div className="name">{user.email ?? "کاربر"}</div>
-                <form
-                  action="#"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    await supabase.auth.signOut();
-                    window.location.href = "/";
-                  }}
-                >
-                  <button className="nv-btn" type="submit">خروج</button>
-                </form>
-              </div>
+              <>
+                <div className="dash-user-email">{user.email}</div>
+                <button className="nv-btn" onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.href = "/";
+                }}>خروج</button>
+              </>
             ) : (
-              <Link className="nv-btn nv-btn-primary" href="/login">ورود / ثبت‌نام</Link>
+              <Link href="/login" className="nv-btn nv-btn-primary">ورود / ثبت‌نام</Link>
             )}
           </div>
         </div>

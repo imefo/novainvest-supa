@@ -224,3 +224,27 @@ body {
 
 .tips{margin-top:8px;color:#9fb0c8;font-size:12px;display:grid;gap:2px}
 .actions-bottom{margin-top:12px;display:flex;gap:8px}
+/* === Dashboard Layout === */
+.dash-wrap{display:grid;grid-template-columns:260px 1fr;gap:16px}
+@media(max-width:960px){.dash-wrap{grid-template-columns:1fr}}
+.dash-sidebar{
+  position:sticky;top:72px;height:calc(100dvh - 88px);
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(12,16,28,.45);
+  backdrop-filter:blur(10px) saturate(140%);
+  border-radius:14px; padding:14px; display:none;
+}
+@media(min-width:961px){.dash-sidebar{display:block}}
+.dash-sidebar-inner{display:flex;flex-direction:column;height:100%}
+.dash-brand{font-weight:800;color:#e5e7eb;text-decoration:none;margin-bottom:10px}
+.dash-nav{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.dash-nav-link{
+  display:block;padding:10px 12px;border-radius:10px;text-decoration:none;
+  color:#cbd5e1;border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.03);
+}
+.dash-nav-link:hover{background:rgba(255,255,255,.08);color:#fff}
+.dash-nav-link.active{background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;border:none}
+.dash-user-box{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.dash-user-email{font-size:12px;color:#94a3b8}
+.dash-main{min-height:70dvh}
