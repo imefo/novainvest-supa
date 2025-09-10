@@ -221,7 +221,6 @@ body {
   white-space:nowrap;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
   padding:8px 10px;border-radius:10px;color:#e5e7eb}
 .noaddr{color:#9fb0c8;display:flex;align-items:center}
-
 .tips{margin-top:8px;color:#9fb0c8;font-size:12px;display:grid;gap:2px}
 .actions-bottom{margin-top:12px;display:flex;gap:8px}
 /* === Dashboard Layout === */
@@ -260,3 +259,24 @@ body {
 .t-head,.t-row{display:grid;grid-template-columns:140px 120px 120px 1fr 120px 180px;gap:10px;align-items:center}
 .t-head{font-weight:700;color:#cbd5e1}
 .t-row{padding:10px;border:1px solid rgba(255,255,255,.06);border-radius:10px;background:rgba(255,255,255,.03)}
+.nv-h1{font-weight:800;font-size:24px;margin:12px 0 16px;}
+.nv-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-top:12px;}
+.nv-table{width:100%;border-collapse:separate;border-spacing:0 8px;}
+.nv-table th{font-weight:700;text-align:right;font-size:13px;color:#aeb6c7;padding:8px;}
+.nv-table td{background:rgba(255,255,255,.03);padding:10px;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);}
+.nv-actions button{margin-inline-start:6px}
+.nv-err{color:#ffb4b4;margin:8px 0;}
+/* جدول و فرم‌های سبک‌ */
+.nv-input{width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#e5e7eb;padding:8px 10px;outline:none}
+.nv-input::placeholder{color:#9aa4b2}
+.nv-alert{padding:10px 12px;border-radius:10px}
+.nv-alert-error{background:#3b0d0d;border:1px solid #6b1b1b;color:#fca5a5}
+.nv-alert-ok{background:#0d2f1a;border:1px solid #1f7a3b;color:#86efac}
+
+.nv-table{display:grid;gap:8px}
+.nv-thead,.nv-row{display:grid;grid-template-columns:1.1fr 1fr .6fr 1.2fr 1.2fr .7fr;gap:8px;align-items:flex-start}
+.nv-thead{font-weight:700;color:#cbd5e1}
+.nv-row{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px}
+
+.page-title{margin:0 0 12px 0;font-size:22px}
+.card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px}
