@@ -1,68 +1,92 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function AdminUsers() {
+export default function AdminUsersPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState("");
 
-  async function load() {
+  const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, full_name, is_admin, is_blocked, created_at")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (!error) setRows(data || []);
+      .select("user_id, full_name, email, is_blocked, usdt_balance, referrals_count")
+      .order("created_at", { ascending: false });
     setLoading(false);
-  }
+    if (error) setMsg(error.message);
+    else setRows(data || []);
+  };
 
   useEffect(() => { load(); }, []);
 
-  async function toggleBlock(user_id, is_blocked) {
-    await supabase
-      .from("profiles")
-      .update({ is_blocked: !is_blocked })
-      .eq("user_id", user_id);
+  const block = async (uid, blocked) => {
+    const { error } = await supabase.rpc("admin_block_user", { target: uid, blocked });
+    if (error) return alert(error.message);
     load();
-  }
+  };
 
-  async function toggleAdmin(user_id, is_admin) {
-    await supabase
-      .from("profiles")
-      .update({ is_admin: !is_admin })
-      .eq("user_id", user_id);
+  const setBalance = async (uid) => {
+    const v = prompt("New USDT balance:");
+    if (v == null) return;
+    const amt = Number(v);
+    const { error } = await supabase.rpc("admin_set_balance", { target: uid, new_balance: amt });
+    if (error) return alert(error.message);
     load();
-  }
+  };
+
+  const incBalance = async (uid, sign) => {
+    const v = prompt(sign>0 ? "Add USDT amount:" : "Subtract USDT amount:");
+    if (v == null) return;
+    const delta = sign>0 ? Math.abs(Number(v)) : -Math.abs(Number(v));
+    const { error } = await supabase.rpc("admin_inc_balance", { target: uid, delta, note: "manual" });
+    if (error) return alert(error.message);
+    load();
+  };
+
+  const setRefs = async (uid) => {
+    const v = prompt("New referrals count:");
+    if (v == null) return;
+    const n = parseInt(v, 10);
+    const { error } = await supabase.rpc("admin_set_referrals", { target: uid, new_count: n });
+    if (error) return alert(error.message);
+    load();
+  };
 
   return (
-    <div className="stack gap16">
-      <h1>کاربران</h1>
-      <div className="glass card">
-        {loading ? "درحال بارگذاری…" : (
-          <div className="table">
-            <div className="thead">
-              <div>ایمیل/شناسه</div><div>نام</div><div>ادمین؟</div><div>بلاک؟</div><div>اعمال</div>
-            </div>
-            {rows.map((r) => (
-              <div key={r.user_id} className="trow">
-                <div className="muted">{r.user_id}</div>
-                <div>{r.full_name || "-"}</div>
-                <div>{r.is_admin ? "بله" : "خیر"}</div>
-                <div>{r.is_blocked ? "بله" : "خیر"}</div>
-                <div className="row gap8">
-                  <button className="btn" onClick={() => toggleAdmin(r.user_id, r.is_admin)}>
-                    {r.is_admin ? "حذف ادمین" : "ادمین کن"}
+    <div className="nv-container">
+      <h1 className="nv-h1">کاربران</h1>
+      {loading ? <p>در حال بارگذاری...</p> : null}
+      {msg && <p className="nv-err">{msg}</p>}
+      <div className="nv-card">
+        <table className="nv-table">
+          <thead>
+            <tr>
+              <th>ایمیل</th><th>نام</th><th>USDT</th><th>دعوتی‌ها</th><th>وضعیت</th><th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.user_id}>
+                <td>{r.email}</td>
+                <td>{r.full_name || "-"}</td>
+                <td>{Number(r.usdt_balance).toFixed(2)}</td>
+                <td>{r.referrals_count}</td>
+                <td>{r.is_blocked ? "مسدود" : "فعال"}</td>
+                <td className="nv-actions">
+                  <button onClick={()=>block(r.user_id, !r.is_blocked)} className="nv-btn">
+                    {r.is_blocked ? "آزاد" : "مسدود"}
                   </button>
-                  <button className="btn" onClick={() => toggleBlock(r.user_id, r.is_blocked)}>
-                    {r.is_blocked ? "آزاد" : "بلاک"}
-                  </button>
-                </div>
-              </div>
+                  <button onClick={()=>incBalance(r.user_id, +1)} className="nv-btn">+USDT</button>
+                  <button onClick={()=>incBalance(r.user_id, -1)} className="nv-btn">-USDT</button>
+                  <button onClick={()=>setBalance(r.user_id)} className="nv-btn">Set USDT</button>
+                  <button onClick={()=>setRefs(r.user_id)} className="nv-btn">Set دعوتی</button>
+                </td>
+              </tr>
             ))}
-          </div>
-        )}
+            {!rows.length && !loading ? <tr><td colSpan={6} style={{textAlign:"center"}}>کاربری یافت نشد</td></tr> : null}
+          </tbody>
+        </table>
       </div>
     </div>
   );
