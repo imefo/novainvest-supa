@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import ReferralCard from "@/components/ReferralCard";
+import WalletCard from "@/components/walletCard";
 
 export default function DashboardPage() {
-  const [user, setUser] = useState(null);
-  const [balance, setBalance] = useState(null);
-  const [invested, setInvested] = useState(null);
-  const [last30, setLast30] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [wallet, setWallet] = useState(0);
+  const [profit30d, setProfit30d] = useState(0);
+  const [invested, setInvested] = useState(0);
   const [err, setErr] = useState("");
 
   useEffect(() => {
@@ -17,132 +18,117 @@ export default function DashboardPage() {
     (async () => {
       try {
         setErr("");
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-        // 1) کاربر
-        const { data: u, error: eU } = await supabase.auth.getUser();
-        if (eU) throw eU;
-        if (!u?.user) {
-          setErr("ابتدا وارد شوید.");
-          return;
-        }
-        if (!alive) return;
-        setUser(u.user);
-
-        // 2) موجودی کیف‌پول USDT (اگر رکورد نبود → 0)
-        const { data: bRow, error: eB } = await supabase
+        // موجودی کیف‌پول (اگر currency نداریم، فقط مقدار پیش‌فرض رو می‌خوانیم)
+        const { data: bal } = await supabase
           .from("user_balances")
-          .select("balance")
-          .eq("user_id", u.user.id)
-          .eq("currency", "USDT")
+          .select("amount")
+          .eq("user_id", user.id)
           .maybeSingle();
-        if (eB) throw eB;
-        setBalance(bRow?.balance ?? 0);
+        if (!alive) return;
+        setWallet(bal?.amount ?? 0);
 
-        // 3) مقادیر نمایشی (فعلاً صفر تا بعداً RPC واقعی بسازیم)
-        setInvested(0);
-        setLast30(0);
+        // جمع سرمایه‌گذاری‌های فعال (اگر ویو/ستون‌ها آماده‌ست)
+        const { data: inv } = await supabase
+          .from("user_plans")
+          .select("amount")
+          .eq("user_id", user.id)
+          .eq("status", "active");
+        if (!alive) return;
+        const sumInvested = (inv ?? []).reduce((s, r) => s + (r.amount || 0), 0);
+        setInvested(sumInvested);
+
+        // سود ۳۰ روز اخیر (ساده و محافظه‌کارانه)
+        const { data: txs } = await supabase
+          .from("transactions")
+          .select("amount,type,created_at")
+          .eq("user_id", user.id)
+          .eq("type", "profit")
+          .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString());
+        if (!alive) return;
+        const sumProfit = (txs ?? []).reduce((s, r) => s + (r.amount || 0), 0);
+        setProfit30d(sumProfit);
       } catch (e) {
         if (!alive) return;
-        setErr(e?.message || "خطا در بارگذاری داشبورد");
+        setErr("مشکل پیش آمد. لطفاً دوباره تلاش کنید.");
+        console.error(e);
+      } finally {
+        if (alive) setLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
+    return () => (alive = false);
   }, []);
 
-  const fmt = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
-    []
-  );
-
   return (
-    <div className="nv-container dash">
-      <div className="dash-grid">
-        {/* سایدبار */}
-        <aside className="side">
-          <div className="side-card glass">
-            <div className="brand">NovalInvest</div>
-            <div className="muted" style={{ marginTop: 4 }}>{user?.email}</div>
-            <nav className="side-nav" style={{ marginTop: 12 }}>
-              <Link href="/dashboard" className="side-link">داشبورد</Link>
-              <Link href="/dashboard/transactions" className="side-link">تراکنش‌ها</Link>
-              <Link href="/plans" className="side-link">پلن‌ها</Link>
-              <Link href="/deposit" className="side-link">واریز</Link>
-              <Link href="/logout" className="side-link danger">خروج</Link>
-            </nav>
+    <div className="nv-stack" style={{ display: "grid", gap: 16 }}>
+      {/* عنوان */}
+      <div className="nv-card-title" style={{ fontSize: 22, marginBottom: 4 }}>
+        داشبورد
+      </div>
+      {err && (
+        <div className="nv-card" style={{ borderColor: "rgba(255,80,80,.4)" }}>
+          {err}
+        </div>
+      )}
+
+      {/* سه کاشی خلاصه */}
+      <div
+        className="nv-grid"
+        style={{
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+        }}
+      >
+        <div className="nv-card">
+          <div className="nv-muted">موجودی کیف‌پول (USDT)</div>
+          <div className="nv-number">{wallet.toFixed(2)}</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <Link className="nv-btn" href="/deposit">واریز</Link>
+            <Link className="nv-btn" href="/withdraw">برداشت</Link>
           </div>
-        </aside>
+        </div>
 
-        {/* محتوای اصلی */}
-        <main className="main">
-          <h1 style={{ marginBottom: 12 }}>داشبورد</h1>
+        <div className="nv-card">
+          <div className="nv-muted">سود ۳۰ روز اخیر</div>
+          <div className="nv-number">{profit30d.toFixed(2)} USDT</div>
+          <div className="nv-muted" style={{ fontSize: 12 }}>با بازتوزیع خودکار</div>
+        </div>
 
-          {/* ردیف آمار */}
-          <div className="stats">
-            <div className="stat glass">
-              <div className="label">موجودی کیف‌پول (USDT)</div>
-              <div className="value">
-                {balance == null ? "…" : fmt.format(Number(balance))}
-              </div>
-              <div className="row gap">
-                <Link href="/deposit" className="btn primary">واریز</Link>
-                <Link href="/withdraw" className="btn">برداشت</Link>
-              </div>
-            </div>
+        <div className="nv-card">
+          <div className="nv-muted">سرمایه‌گذاری‌ها</div>
+          <div className="nv-number">{invested.toFixed(2)} USDT</div>
+          <Link className="nv-btn" href="/plans" style={{ marginTop: 10 }}>
+            مشاهده پلن‌ها
+          </Link>
+        </div>
+      </div>
 
-            <div className="stat glass">
-              <div className="label">سود ۳۰ روز اخیر</div>
-              <div className="value">
-                {last30 == null ? "…" : fmt.format(Number(last30))}
-              </div>
-              <div className="muted">با بازتوزیع خودکار</div>
-            </div>
+      {/* کیف‌پول + دعوت */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 12,
+          alignItems: "start",
+        }}
+      >
+        <WalletCard />
+        <ReferralCard />
+      </div>
 
-            <div className="stat glass">
-              <div className="label">سرمایه‌گذاری‌ها</div>
-              <div className="value">
-                {invested == null ? "…" : fmt.format(Number(invested))}
-              </div>
-              <Link href="/plans" className="btn">مشاهده پلن‌ها</Link>
-            </div>
-          </div>
-
-          {/* کارت‌ها: کیف پول + دعوت */}
-          <div className="cards two" style={{ marginTop: 12 }}>
-            <div className="card glass">
-              <div className="card-head">کیف‌پول</div>
-              <p className="muted">
-                پس از واریز، اسکرین‌شات یا TxHash را در صفحه واریز بارگذاری کنید تا توسط ادمین تأیید و کیف‌پول شارژ شود.
-              </p>
-              <Link href="/deposit" className="btn primary">صفحه واریز</Link>
-            </div>
-
-            <ReferralCard />
-          </div>
-
-          {/* شورتکات‌ها */}
-          <div className="row gap wrap" style={{ marginTop: 12 }}>
-            <Link href="/plans" className="chip">خرید پلن</Link>
-            <Link href="/dashboard/transactions" className="chip">تراکنش‌ها</Link>
-            <Link href="/profile" className="chip">پروفایل</Link>
-          </div>
-
-          {/* ارور کلی (در صورت وجود) */}
-          {err && <div className="alert error" style={{ marginTop: 12 }}>{err}</div>}
-
-          {/* جدول ترنزاکشن‌های اخیر */}
-          <div className="card glass" style={{ marginTop: 12 }}>
-            <div className="card-head">تراکنش‌های اخیر</div>
-            <div className="muted">تراکنشی ثبت نشده است.</div>
-          </div>
-        </main>
+      {/* شورتکات‌ها */}
+      <div
+        className="nv-card"
+        style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
+      >
+        <Link className="nv-btn" href="/plans">خرید پلن</Link>
+        <Link className="nv-btn" href="/dashboard/transactions">تراکنش‌ها</Link>
+        <Link className="nv-btn" href="/profile">پروفایل</Link>
+        <Link className="nv-btn" href="/deposit">واریز دستی (کریپتو)</Link>
       </div>
     </div>
   );
