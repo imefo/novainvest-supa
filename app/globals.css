@@ -206,3 +206,21 @@ body {
   .lux-metrics{grid-template-columns:1fr}
   .lux-two{grid-template-columns:1fr}
 }
+/* ==== Wallet Card ==== */
+.lux-card.wallet{border:1px solid rgba(255,255,255,.08);background:rgba(17,21,34,.55);
+  backdrop-filter:blur(8px) saturate(140%);border-radius:14px;padding:16px}
+.lux-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lux-card-head .title{font-weight:800;color:#e5e7eb}
+.lux-card-head .nets{display:flex;gap:6px}
+.net{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);
+  color:#cbd5e1;border-radius:8px;padding:6px 10px;cursor:pointer}
+.net.act{background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;border:none}
+
+.addr-row{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.addr{direction:ltr;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  padding:8px 10px;border-radius:10px;color:#e5e7eb}
+.noaddr{color:#9fb0c8;display:flex;align-items:center}
+
+.tips{margin-top:8px;color:#9fb0c8;font-size:12px;display:grid;gap:2px}
+.actions-bottom{margin-top:12px;display:flex;gap:8px}
