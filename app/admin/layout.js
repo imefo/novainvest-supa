@@ -1,56 +1,74 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-
-function SidebarLink({ href, children }) {
-  const pathname = usePathname();
-  const active = pathname === href;
-  return (
-    <Link
-      href={href}
-      className={`block w-full text-center nv-btn ${active ? "nv-btn-primary" : ""}`}
-    >
-      {children}
-    </Link>
-  );
-}
+import { usePathname, useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
 export default function AdminLayout({ children }) {
-  const [email, setEmail] = useState("");
+  const pathname = usePathname();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.email) setEmail(data.user.email);
-    });
-  }, []);
+  const pageTitle = useMemo(() => {
+    if (!pathname) return "پنل ادمین";
+    if (pathname.startsWith("/admin/users")) return "کاربران";
+    if (pathname.startsWith("/admin/plans")) return "پلن‌ها";
+    if (pathname.startsWith("/admin/transactions")) return "تراکنش‌ها";
+    if (pathname.startsWith("/admin/deposit")) return "واریز/برداشت";
+    if (pathname.startsWith("/admin/kyc")) return "احراز هویت (KYC)";
+    if (pathname.startsWith("/admin/tickets")) return "تیکت‌ها";
+    return "پنل ادمین";
+  }, [pathname]);
+
+  const items = [
+    { href: "/admin", label: "نمای کلی" },
+    { href: "/admin/users", label: "کاربران" },
+    { href: "/admin/plans", label: "پلن‌ها" },
+    { href: "/admin/transactions", label: "تراکنش‌ها" },
+    { href: "/admin/deposit", label: "واریز/برداشت" },
+    { href: "/admin/kyc", label: "KYC" },
+    { href: "/admin/tickets", label: "تیکت‌ها" },
+  ];
+  const isActive = (href) => pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <div className="nv-container">
-      <div className="grid md:grid-cols-[260px_1fr] gap-4">
-        {/* Sidebar */}
-        <aside className="glass rounded-xl p-4 h-fit">
-          <div className="text-slate-200 font-extrabold text-lg mb-1">مدیریت</div>
-          <div className="text-slate-400 text-sm mb-4">{email}</div>
+    <div className="ad-shell">
+      <aside className={`ad-sidebar ${open ? "open" : ""}`}>
+        <div className="ad-logo">
+          <Link href="/"><span>🏠</span><strong>NovaInvest</strong></Link>
+          <small>Admin</small>
+        </div>
+        <nav className="ad-nav">
+          {items.map(it => (
+            <Link
+              key={it.href}
+              href={it.href}
+              className={`ad-link ${isActive(it.href) ? "active" : ""}`}
+              onClick={() => setOpen(false)}
+            >
+              {it.label}
+            </Link>
+          ))}
+          <div className="ad-spacer" />
+          <Link href="/dashboard" className="ad-link" onClick={() => setOpen(false)}>↺ رفتن به داشبورد کاربر</Link>
+          <Link href="/" className="ad-link" onClick={() => setOpen(false)}>← بازگشت به سایت</Link>
+        </nav>
+      </aside>
 
-          <ul className="space-y-2">
-            <li><SidebarLink href="/admin">داشبورد ادمین</SidebarLink></li>
-            <li><SidebarLink href="/admin/users">کاربران</SidebarLink></li>
-            <li><SidebarLink href="/admin/plans">پلن‌ها</SidebarLink></li>
-            <li><SidebarLink href="/admin/transactions">تراکنش‌ها</SidebarLink></li>
-            <li><SidebarLink href="/admin/kyc">KYC</SidebarLink></li>
-            <li><SidebarLink href="/admin/deposit">واریزها</SidebarLink></li>
-            <li><SidebarLink href="/admin/tickets">تیکت‌ها</SidebarLink></li>
-            <li><SidebarLink href="/dashboard">رفتن به داشبورد کاربر</SidebarLink></li>
-          </ul>
-        </aside>
+      <div className="ad-right">
+        <header className="ad-topbar">
+          <div className="ad-left-tools">
+            <button className="ad-btn" onClick={() => setOpen(v => !v)}>☰</button>
+            <button className="ad-btn" onClick={() => router.back()}>↶ بازگشت</button>
+          </div>
+          <div className="ad-title">{pageTitle}</div>
+          <div className="ad-actions">
+            <Link href="/admin/tickets" className="ad-btn">تیکت‌های جدید</Link>
+            <Link href="/logout" className="ad-btn">خروج</Link>
+          </div>
+        </header>
 
-        {/* Content */}
-        <main className="min-h-[60vh]">
-          {children}
-        </main>
+        <main className="ad-main">{children}</main>
       </div>
     </div>
   );
