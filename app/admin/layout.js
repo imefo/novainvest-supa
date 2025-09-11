@@ -1,75 +1,62 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { isAdminFast } from "@/lib/role";
 
 export default function AdminLayout({ children }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const pageTitle = useMemo(() => {
-    if (!pathname) return "پنل ادمین";
-    if (pathname.startsWith("/admin/users")) return "کاربران";
-    if (pathname.startsWith("/admin/plans")) return "پلن‌ها";
-    if (pathname.startsWith("/admin/transactions")) return "تراکنش‌ها";
-    if (pathname.startsWith("/admin/deposit")) return "واریز/برداشت";
-    if (pathname.startsWith("/admin/kyc")) return "احراز هویت (KYC)";
-    if (pathname.startsWith("/admin/tickets")) return "تیکت‌ها";
-    return "پنل ادمین";
-  }, [pathname]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          window.location.href = "/login";
+          return;
+        }
+        const admin = await isAdminFast(user.id);
+        if (alive) setOk(!!admin);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
-  const items = [
-    { href: "/admin", label: "نمای کلی" },
-    { href: "/admin/users", label: "کاربران" },
-    { href: "/admin/plans", label: "پلن‌ها" },
-    { href: "/admin/transactions", label: "تراکنش‌ها" },
-    { href: "/admin/deposit", label: "واریز/برداشت" },
-    { href: "/admin/kyc", label: "KYC" },
-    { href: "/admin/tickets", label: "تیکت‌ها" },
-  ];
-  const isActive = (href) => pathname === href || pathname.startsWith(href + "/");
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">در حال بارگذاری پنل ادمین…</div>
+      </div>
+    );
+  }
+
+  if (!ok) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4">
+        <div className="text-red-400">دسترسی غیرمجاز</div>
+        <Link href="/dashboard" className="btn btn-outline">بازگشت به داشبورد</Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="ad-shell">
-      <aside className={`ad-sidebar ${open ? "open" : ""}`}>
-        <div className="ad-logo">
-          <Link href="/"><span>🏠</span><strong>NovaInvest</strong></Link>
-          <small>Admin</small>
+    <div className="mx-auto max-w-6xl px-4 py-6">
+      {/* هدر کوچک بالای صفحه */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">پنل ادمین</h1>
+        <div className="flex gap-2">
+          <Link href="/dashboard" className="btn btn-outline">بازگشت</Link>
+          <Link href="/" className="btn btn-outline">صفحه اصلی</Link>
         </div>
-        <nav className="ad-nav">
-          {items.map(it => (
-            <Link
-              key={it.href}
-              href={it.href}
-              className={`ad-link ${isActive(it.href) ? "active" : ""}`}
-              onClick={() => setOpen(false)}
-            >
-              {it.label}
-            </Link>
-          ))}
-          <div className="ad-spacer" />
-          <Link href="/dashboard" className="ad-link" onClick={() => setOpen(false)}>↺ رفتن به داشبورد کاربر</Link>
-          <Link href="/" className="ad-link" onClick={() => setOpen(false)}>← بازگشت به سایت</Link>
-        </nav>
-      </aside>
-
-      <div className="ad-right">
-        <header className="ad-topbar">
-          <div className="ad-left-tools">
-            <button className="ad-btn" onClick={() => setOpen(v => !v)}>☰</button>
-            <button className="ad-btn" onClick={() => router.back()}>↶ بازگشت</button>
-          </div>
-          <div className="ad-title">{pageTitle}</div>
-          <div className="ad-actions">
-            <Link href="/admin/tickets" className="ad-btn">تیکت‌های جدید</Link>
-            <Link href="/logout" className="ad-btn">خروج</Link>
-          </div>
-        </header>
-
-        <main className="ad-main">{children}</main>
       </div>
+
+      {/* محتوای صفحات داخلی */}
+      {children}
     </div>
   );
 }
