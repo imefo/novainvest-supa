@@ -4,15 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
-/**
- * داشبورد ادمین با کارت‌های KPI
- * کارت‌ها: کاربران، پلن‌ها، تراکنش‌ها، KYC، تیکت‌ها، واریز/برداشت
- * هر کارت یک شمارنده (count) و دکمه‌ی رفتن به صفحه‌ی مربوطه دارد.
- * سایدبار حذف شده و همه‌چیز روی یک گرید ریسپانسیو نمایش داده می‌شود.
- */
-
-export default function AdminHome() {
+export default function AdminKPI() {
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
   const [stats, setStats] = useState({
     users: 0,
     plans: 0,
@@ -21,52 +15,37 @@ export default function AdminHome() {
     ticketsOpen: 0,
     depositsPending: 0,
   });
-  const [err, setErr] = useState("");
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        setErr("");
-        setLoading(true);
+        setErr(""); setLoading(true);
 
-        // تعداد کاربران از جدول profiles
-        const { count: usersCount, error: e1 } = await supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true });
+        // تعدادها را از جداولت می‌گیرد — اگر اسم‌ها فرق دارد همین‌جا عوض کن
+        const [{ count: usersCount, error: e1 }] = await Promise.all([
+          supabase.from("profiles").select("*", { count: "exact", head: true }),
+        ]);
         if (e1) throw e1;
 
-        // تعداد پلن‌ها از جدول plans
-        const { count: plansCount, error: e2 } = await supabase
-          .from("plans")
-          .select("*", { count: "exact", head: true });
+        const { count: plansCount, error: e2 } =
+          await supabase.from("plans").select("*", { count: "exact", head: true });
         if (e2) throw e2;
 
-        // تعداد تراکنش‌ها از جدول transactions
-        const { count: txCount, error: e3 } = await supabase
-          .from("transactions")
-          .select("*", { count: "exact", head: true });
+        const { count: txCount, error: e3 } =
+          await supabase.from("transactions").select("*", { count: "exact", head: true });
         if (e3) throw e3;
 
-        // KYC در انتظار از kyc_requests (فرض: ستون status دارد)
-        const { count: kycCount, error: e4 } = await supabase
-          .from("kyc_requests")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending");
+        const { count: kycCount, error: e4 } =
+          await supabase.from("kyc_requests").select("*", { count: "exact", head: true }).eq("status","pending");
         if (e4) throw e4;
 
-        // تیکت‌های باز از tickets (فرض: ستون status دارد: open/answered/closed)
-        const { count: ticketsCount, error: e5 } = await supabase
-          .from("tickets")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "open");
+        const { count: ticketsCount, error: e5 } =
+          await supabase.from("tickets").select("*", { count: "exact", head: true }).eq("status","open");
         if (e5) throw e5;
 
-        // واریز/برداشت‌های در انتظار از deposits (فرض: ستون status دارد)
-        const { count: depCount, error: e6 } = await supabase
-          .from("deposits")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending");
+        const { count: depCount, error: e6 } =
+          await supabase.from("deposits").select("*", { count: "exact", head: true }).eq("status","pending");
         if (e6) throw e6;
 
         if (!alive) return;
@@ -85,272 +64,163 @@ export default function AdminHome() {
         if (alive) setLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
   return (
-    <div className="admin-wrap">
-      <div className="admin-head">
-        <div className="admin-title">
-          پنل ادمین
-          <span className="admin-sub">مدیریت کلی سیستم</span>
+    <main className="wrap" dir="rtl">
+      <header className="top">
+        <div className="title">
+          <h1>پنل ادمین</h1>
+          <p>نمای کلی | مدیریت سیستم</p>
         </div>
-
-        <div className="admin-actions">
+        <div className="actions">
           <Link href="/dashboard" className="btn ghost">بازگشت به داشبورد کاربر</Link>
           <Link href="/" className="btn ghost">بازگشت به سایت</Link>
         </div>
-      </div>
+      </header>
 
-      {err ? (
-        <div className="alert error">خطا: {err}</div>
-      ) : null}
+      {err && <div className="alert">خطا: {err}</div>}
 
-      <div className="kpi-grid">
-        <KpiCard
-          color="gradient-1"
-          title="کاربران"
-          hint="مشاهده و مدیریت کاربران + تغییر موجودی"
-          count={stats.users}
-          cta="رفتن به کاربران"
-          href="/admin/users"
+      <section className="grid">
+        <Card
           emoji="🧑‍💼"
+          title="کاربران"
+          hint="مشاهده/مسدودسازی/تغییر موجودی"
+          count={stats.users}
+          href="/admin/users"
+          gradient="g1"
           loading={loading}
         />
-
-        <KpiCard
-          color="gradient-2"
-          title="پلن‌ها"
-          hint="ایجاد/ویرایش/حذف پلن‌ها + فعال/غیرفعال"
-          count={stats.plans}
-          cta="رفتن به پلن‌ها"
-          href="/admin/plans"
+        <Card
           emoji="📈"
+          title="پلن‌ها"
+          hint="ایجاد/ویرایش/حذف + فعال/غیرفعال"
+          count={stats.plans}
+          href="/admin/plans"
+          gradient="g2"
           loading={loading}
         />
-
-        <KpiCard
-          color="gradient-3"
-          title="تراکنش‌ها"
-          hint="واریز/برداشت‌ها و وضعیت‌ها"
-          count={stats.txs}
-          cta="رفتن به تراکنش‌ها"
-          href="/admin/transactions"
+        <Card
           emoji="💳"
+          title="تراکنش‌ها"
+          hint="واریز/برداشت و وضعیت‌ها"
+          count={stats.txs}
+          href="/admin/transactions"
+          gradient="g3"
           loading={loading}
         />
-
-        <KpiCard
-          color="gradient-4"
-          title="KYC در انتظار"
-          hint="تأیید/رد احراز هویت کاربران"
-          count={stats.kycPending}
-          cta="رفتن به KYC"
-          href="/admin/kyc"
+        <Card
           emoji="🪪"
+          title="KYC در انتظار"
+          hint="تأیید/رد احراز هویت"
+          count={stats.kycPending}
+          href="/admin/kyc"
+          gradient="g4"
           loading={loading}
         />
-
-        <KpiCard
-          color="gradient-5"
-          title="واریز/برداشت در انتظار"
-          hint="تنظیم ارز و آدرس ولت + تایید دستی"
-          count={stats.depositsPending}
-          cta="رفتن به واریز/برداشت"
-          href="/admin/deposit"
+        <Card
           emoji="💰"
+          title="واریز/برداشت در انتظار"
+          hint="تنظیم ارز/ولت + تایید دستی"
+          count={stats.depositsPending}
+          href="/admin/deposit"
+          gradient="g5"
           loading={loading}
         />
-
-        <KpiCard
-          color="gradient-6"
-          title="تیکت‌های باز"
-          hint="پاسخگویی به تیکت‌ها و بستن گفتگو"
-          count={stats.ticketsOpen}
-          cta="رفتن به تیکت‌ها"
-          href="/admin/tickets"
+        <Card
           emoji="🎧"
+          title="تیکت‌های باز"
+          hint="پاسخ و بستن گفتگو"
+          count={stats.ticketsOpen}
+          href="/admin/tickets"
+          gradient="g6"
           loading={loading}
         />
-      </div>
+      </section>
 
       <style jsx>{`
-        .admin-wrap {
-          padding: 24px;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
+        /* ایزوله کردن لینک‌ها از گلوبال‌ها */
+        :global(.wrap a) { color: inherit; text-decoration: none; }
 
-        .admin-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 18px;
-        }
+        .wrap{max-width:1200px;margin:0 auto;padding:24px;}
+        .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;}
+        .title h1{margin:0;font-size:26px;font-weight:900;letter-spacing:-.4px}
+        .title p{margin:4px 0 0;opacity:.7;font-size:13px}
+        .actions{display:flex;gap:8px;flex-wrap:wrap}
+        .btn{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06)}
+        .btn.ghost{background:transparent;border-style:dashed}
+        .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.1)}
+        .alert{background:rgba(255,80,80,.15);border:1px solid rgba(255,120,120,.35);padding:10px 12px;border-radius:12px;margin-bottom:14px}
 
-        .admin-title {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          font-size: 22px;
-          font-weight: 800;
-          letter-spacing: -0.2px;
+        .grid{
+          display:grid;
+          grid-template-columns:repeat(12,1fr);
+          gap:16px;
         }
-        .admin-sub {
-          font-size: 13px;
-          font-weight: 500;
-          opacity: 0.7;
-        }
+        @media(max-width:1024px){ .grid>section{grid-column:span 6} }
+        @media(max-width:640px){ .grid>section{grid-column:span 12} }
 
-        .admin-actions {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-
-        .btn {
-          padding: 10px 14px;
-          font-size: 14px;
-          border-radius: 10px;
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.12);
-          transition: 180ms ease;
-        }
-        .btn:hover {
-          transform: translateY(-1px);
-          background: rgba(255,255,255,0.1);
-        }
-        .btn.ghost {
-          background: transparent;
-          border: 1px dashed rgba(255,255,255,0.25);
-        }
-
-        .alert.error {
-          background: rgba(255, 69, 58, 0.2);
-          border: 1px solid rgba(255, 99, 71, 0.4);
-          color: #ffdada;
-          padding: 10px 12px;
-          border-radius: 12px;
-          margin-bottom: 16px;
-          font-size: 14px;
-        }
-
-        .kpi-grid {
-          display: grid;
-          grid-template-columns: repeat(12, 1fr);
-          gap: 14px;
-        }
-        /* 6 کارت در دو ردیف: هر کارت روی دسکتاپ span=4 (سه تا در هر ردیف) */
-        .kpi {
-          grid-column: span 4;
-          min-height: 150px;
-          border-radius: 16px;
-          padding: 18px;
-          position: relative;
-          overflow: hidden;
-          border: 1px solid rgba(255,255,255,0.12);
-          background: rgba(10,12,20,0.6);
+        /* کارت KPI */
+        section.card{
+          grid-column:span 4;
+          position:relative;
+          overflow:hidden;
+          padding:18px;
+          border-radius:16px;
+          border:1px solid rgba(255,255,255,.12);
+          background:rgba(12,14,22,.7);
           backdrop-filter: blur(6px);
+          transition: transform .18s ease, box-shadow .18s ease;
+          box-shadow:0 6px 24px rgba(0,0,0,.25) inset;
         }
-        @media (max-width: 980px) {
-          .kpi { grid-column: span 6; }
-        }
-        @media (max-width: 640px) {
-          .kpi { grid-column: span 12; }
-        }
+        section.card:hover{ transform: translateY(-2px); box-shadow:0 10px 30px rgba(0,0,0,.35) inset; }
 
-        .kpi .badge {
-          position: absolute;
-          right: 12px;
-          top: 12px;
-          font-size: 18px;
-          opacity: 0.9;
-        }
+        .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+        .emoji{font-size:22px;opacity:.9}
+        .titleBox{display:flex;flex-direction:column;gap:4px}
+        .titleBox h3{margin:0;font-size:16px;font-weight:800}
+        .titleBox .hint{font-size:12px;opacity:.75}
 
-        .kpi h3 {
-          font-size: 16px;
-          font-weight: 800;
-          margin: 0 0 8px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
+        .count{font-size:30px;font-weight:900;margin:10px 0 14px;letter-spacing:-.6px}
+        .cta{display:inline-flex;gap:8px;align-items:center;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08)}
+        .cta:hover{background:rgba(255,255,255,.14)}
 
-        .kpi p {
-          font-size: 12.5px;
-          opacity: 0.75;
-          margin: 0 0 14px;
-          min-height: 32px;
+        /* گرادینت نرم پس‌زمینه هر کارت */
+        .g1::after,.g2::after,.g3::after,.g4::after,.g5::after,.g6::after{
+          content:"";position:absolute;inset:-35%;
+          background:
+            radial-gradient(60% 60% at 85% 15%, var(--c1) 0%, transparent 55%),
+            radial-gradient(60% 60% at 10% 90%, var(--c2) 0%, transparent 55%);
+          opacity:.18;pointer-events:none;
         }
-
-        .kpi .count {
-          font-size: 28px;
-          font-weight: 900;
-          letter-spacing: -0.5px;
-          margin-bottom: 12px;
-        }
-
-        .kpi .cta {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 12px;
-          border-radius: 12px;
-          font-size: 13.5px;
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.18);
-        }
-        .kpi .cta:hover {
-          transform: translateY(-1px);
-          background: rgba(255,255,255,0.14);
-        }
-
-        /* گرادیانت‌های ظریف گوشه‌ها */
-        .gradient-1::after,
-        .gradient-2::after,
-        .gradient-3::after,
-        .gradient-4::after,
-        .gradient-5::after,
-        .gradient-6::after {
-          content: "";
-          position: absolute;
-          inset: -30%;
-          background: radial-gradient(60% 60% at 85% 15%, var(--g1, #7c3aed) 0%, transparent 60%),
-                      radial-gradient(60% 60% at 10% 90%, var(--g2, #06b6d4) 0%, transparent 60%);
-          opacity: 0.18;
-          pointer-events: none;
-        }
-        .gradient-1 { --g1:#7c3aed; --g2:#06b6d4; }
-        .gradient-2 { --g1:#a21caf; --g2:#22d3ee; }
-        .gradient-3 { --g1:#2563eb; --g2:#22c55e; }
-        .gradient-4 { --g1:#f59e0b; --g2:#6366f1; }
-        .gradient-5 { --g1:#10b981; --g2:#f43f5e; }
-        .gradient-6 { --g1:#8b5cf6; --g2:#14b8a6; }
-
-        .muted {
-          opacity: 0.7;
-          font-size: 12px;
-        }
+        .g1{--c1:#7c3aed;--c2:#06b6d4}
+        .g2{--c1:#a21caf;--c2:#22d3ee}
+        .g3{--c1:#2563eb;--c2:#22c55e}
+        .g4{--c1:#f59e0b;--c2:#6366f1}
+        .g5{--c1:#10b981;--c2:#f43f5e}
+        .g6{--c1:#8b5cf6;--c2:#14b8a6}
       `}</style>
-    </div>
+    </main>
   );
 }
 
-function KpiCard({ color, title, hint, count, cta, href, emoji, loading }) {
+function Card({ emoji, title, hint, count, href, gradient, loading }) {
   return (
-    <div className={`kpi ${color}`}>
-      <div className="badge">{emoji}</div>
-      <h3>{title}</h3>
-      <p className="muted">{hint}</p>
+    <section className={`card ${gradient}`}>
+      <div className="head">
+        <span className="emoji">{emoji}</span>
+      </div>
+      <div className="titleBox">
+        <h3>{title}</h3>
+        <div className="hint">{hint}</div>
+      </div>
 
       <div className="count">{loading ? "…" : Intl.NumberFormat("fa-IR").format(count || 0)}</div>
 
-      <Link className="cta" href={href}>
-        <span>رفتن به {title.replace("‌", "").replace("ها", "")}</span> <span>↗</span>
+      <Link href={href} className="cta">
+        <span>رفتن به {title}</span><span>↗</span>
       </Link>
-    </div>
+    </section>
   );
 }
