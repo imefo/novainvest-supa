@@ -417,3 +417,43 @@ body {
 .ad-card-title{ margin:0; font-size:18px; font-weight:800; }
 .ad-card-desc{ margin:0; color:#a7b0c0; line-height:1.6; font-size:14px; }
 .ad-card-cta{ margin-top:auto; font-weight:700; opacity:.9; }
+/* ===== Support/Tickets (Glass) ===== */
+.head-row { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin:10px 0 16px; }
+.title { margin:0; font-size:clamp(20px,4vw,28px); }
+.muted { color:#94a3b8; }
+.grid-2 { display:grid; grid-template-columns: 1.1fr 1fr; gap:16px; }
+@media (max-width: 900px){ .grid-2 { grid-template-columns: 1fr; } }
+
+.glass { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 16px; backdrop-filter: blur(10px) saturate(140%); }
+.card-pad { padding:16px; }
+.card-center { padding:24px; text-align:center; border-radius:16px; }
+
+.card-title { margin:0 0 10px 0; font-size:18px; }
+
+.form-grid { display:grid; gap:10px; }
+.form-row { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+.form-col { display:flex; flex-direction:column; gap:6px; }
+.input { width:100%; height:44px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.2); color:#e5e7eb; padding:0 12px; outline:none; }
+textarea.input { height:auto; padding:10px 12px; }
+.err { color:#fca5a5; }
+
+.ticket-list { list-style:none; padding:0; margin:0; display:grid; gap:10px; }
+.ticket-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); }
+.ti-left { display:flex; flex-direction:column; gap:6px; }
+.ti-subj { font-weight:700; color:#e5e7eb; }
+.ti-meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.chip { font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06); color:#cbd5e1; }
+.chip-open { color:#10b981; border-color: rgba(16,185,129,.35); background: rgba(16,185,129,.12); }
+.chip-answered { color:#60a5fa; border-color: rgba(96,165,250,.35); background: rgba(96,165,250,.12); }
+.chip-closed { color:#f87171; border-color: rgba(248,113,113,.35); background: rgba(248,113,113,.12); }
+
+.chat-wrap { padding:12px; }
+.chat-thread { list-style:none; margin:0; padding:0; display:grid; gap:10px; max-height:55vh; overflow:auto; }
+.chat-bubble { display:flex; flex-direction:column; gap:4px; }
+.chat-bubble .bubble { max-width:840px; padding:10px 12px; border-radius:12px; }
+.chat-bubble.user .bubble { align-self:flex-end; background:linear-gradient(135deg,#7c3aed,#3b82f6); color:#fff; }
+.chat-bubble.admin .bubble { align-self:flex-start; background:rgba(255,255,255,.08); color:#e5e7eb; border:1px solid rgba(255,255,255,.12); }
+.chat-bubble .time { font-size:12px; }
+
+.chat-send { display:grid; grid-template-columns: 1fr auto; gap:10px; margin-top:10px; }
+.row-gap { display:flex; gap:8px; flex-wrap:wrap; }
