@@ -1,210 +1,252 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+const CATS = [
+  { v: "general", t: "عمومی" },
+  { v: "deposit", t: "واریز" },
+  { v: "withdraw", t: "برداشت" },
+  { v: "account", t: "حساب کاربری" },
+];
+
+const PRIOS = [
+  { v: "low", t: "کم" },
+  { v: "normal", t: "معمول" },
+  { v: "high", t: "زیاد" },
+];
+
 export default function SupportPage() {
-  const [user, setUser] = useState(null);
-
-  // فرم
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("general"); // general | deposit | withdraw | plan | kyc | other
-  const [priority, setPriority] = useState("normal");  // low | normal | high | urgent
-  const [message, setMessage] = useState("");
-
-  const [submitting, setSubmitting] = useState(false);
-  const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
   const [tickets, setTickets] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
+  // form
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("general");
+  const [priority, setPriority] = useState("normal");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      setErr("");
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) { setErr(error.message); return; }
-      if (!alive) return;
-      setUser(user || null);
-      if (user?.id) await loadTickets(user.id);
-    })();
-    return () => { alive = false; };
+    load();
+    // realtime: وقتی ادمین جواب می‌دهد، بلافاصله ببینیم
+    const ch = supabase
+      .channel("tickets-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tickets" },
+        () => load(false)
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, []);
 
-  async function loadTickets(uid) {
-    setErr("");
-    const { data, error } = await supabase
-      .from("tickets")
-      .select("id, title, category, priority, status, created_at")
-      .eq("user_id", uid)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) setErr(error.message);
-    else setTickets(data || []);
+  async function load(spin = true) {
+    try {
+      if (spin) setLoading(true);
+      setErr("");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setErr("ابتدا وارد شوید.");
+        setLoading(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("id,title,message,category,priority,status,admin_reply,created_at,updated_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setTickets(data || []);
+      if (data && data.length && !selected) setSelected(data[0]); // اولین آیتم
+    } catch (e) {
+      setErr(e.message || "خطا در بارگذاری.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function submitTicket(e) {
     e.preventDefault();
-    setErr(""); setOk("");
-
-    // اعتبارسنجی حداقلی
-    if (!title.trim()) { setErr("موضوع را وارد کنید."); return; }
-    if (!message.trim()) { setErr("متن پیام را وارد کنید."); return; }
-    if (!user?.id) { setErr("لطفاً ابتدا وارد شوید."); return; }
-
+    if (!title.trim() || !message.trim()) {
+      setErr("عنوان و متن پیام الزامی است.");
+      return;
+    }
     setSubmitting(true);
-    const payload = {
-      user_id: user.id,
-      title: title.trim(),
-      category,
-      priority,
-      message: message.trim(), // *** مهم: ستون message حتماً پاس داده می‌شود ***
-      status: "open",
-      created_at: new Date().toISOString(),
-    };
-
-    const { error } = await supabase.from("tickets").insert([payload]);
-    setSubmitting(false);
-
-    if (error) { setErr(error.message); return; }
-
-    setOk("تیکت با موفقیت ثبت شد.");
-    setTitle(""); setMessage("");
-    await loadTickets(user.id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("نشست کاربر یافت نشد.");
+      const { error } = await supabase.from("tickets").insert({
+        user_id: user.id,
+        title: title.trim(),
+        message: message.trim(),
+        category,
+        priority,
+      });
+      if (error) throw error;
+      setTitle(""); setMessage(""); setCategory("general"); setPriority("normal");
+      await load();
+    } catch (e) {
+      setErr(e.message || "ارسال ناموفق بود.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
+  const StatBadge = ({ status }) => (
+    <span className={
+      "px-2 py-1 text-xs rounded-md border " +
+      (status === "closed" ? "bg-gray-800/70 border-gray-700 text-gray-400" :
+       status === "answered" ? "bg-emerald-900/50 border-emerald-700 text-emerald-300" :
+       "bg-amber-900/50 border-amber-700 text-amber-300")
+    }>
+      {status === "closed" ? "بسته" : status === "answered" ? "پاسخ داده شد" : "باز"}
+    </span>
+  );
+
   return (
-    <div className="nv-container">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-extrabold">پشتیبانی</h1>
-        <Link href="/dashboard" className="nv-btn">بازگشت</Link>
+    <div className="p-6 space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-purple-300">پشتیبانی</h1>
+        <button onClick={() => history.back()}
+          className="px-3 py-1.5 rounded-lg bg-gray-900 border border-gray-700 hover:border-purple-500 text-sm">
+          بازگشت
+        </button>
       </div>
 
-      {/* پیام‌های وضعیت */}
-      {err ? <div className="nv-alert nv-alert-error">{err}</div> : null}
-      {ok ? <div className="nv-alert nv-alert-ok">{ok}</div> : null}
-
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* لیست تیکت‌های من */}
-        <section className="nv-card md:col-span-1">
-          <div className="nv-card-title">تیکت‌های شما</div>
-          <div className="space-y-2">
-            {tickets.length === 0 && (
-              <div className="text-sm opacity-70">هنوز تیکتی ثبت نکردید.</div>
-            )}
-            {tickets.map(t => (
-              <Link
-                key={t.id}
-                href={`/dashboard/support/${t.id}`}
-                className="block nv-item hover:opacity-90"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-sm">{t.title}</div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-white/10">
-                    {mapStatus(t.status)}
-                  </span>
-                </div>
-                <div className="text-xs opacity-70 mt-1">
-                  {mapCategory(t.category)} • {mapPriority(t.priority)}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* فرم ایجاد تیکت */}
-        <section className="nv-card md:col-span-2">
-          <div className="nv-card-title">ایجاد تیکت جدید</div>
-
-          <form onSubmit={submitTicket} className="space-y-4">
-            <div>
-              <label className="nv-label">موضوع</label>
-              <input
-                className="nv-input"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="مثلاً مشکل در برداشت"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="nv-label">دسته‌بندی</label>
-                <select
-                  className="nv-input"
-                  value={category}
-                  onChange={e => setCategory(e.target.value)}
-                >
-                  <option value="general">عمومی</option>
-                  <option value="deposit">واریز</option>
-                  <option value="withdraw">برداشت</option>
-                  <option value="plan">پلن‌ها</option>
-                  <option value="kyc">احراز هویت (KYC)</option>
-                  <option value="other">سایر</option>
-                </select>
-              </div>
-              <div>
-                <label className="nv-label">اولویت</label>
-                <select
-                  className="nv-input"
-                  value={priority}
-                  onChange={e => setPriority(e.target.value)}
-                >
-                  <option value="low">کم</option>
-                  <option value="normal">معمول</option>
-                  <option value="high">زیاد</option>
-                  <option value="urgent">فوری</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="nv-label">متن پیام</label>
-              <textarea
-                className="nv-textarea"
-                rows={6}
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                placeholder="توضیحات کامل مشکل/درخواست…"
-              />
-            </div>
-
-            <button disabled={submitting} className="nv-btn nv-btn-primary">
-              {submitting ? "در حال ثبت…" : "ثبت تیکت"}
+      {/* ردیف دو ستونه: لیست + جزئیات */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* لیست تیکت‌ها */}
+        <div className="lg:col-span-2 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">تیکت‌های شما</h2>
+            <button onClick={() => load()} className="text-xs px-2 py-1 rounded bg-gray-900 border border-gray-700 hover:border-purple-500">
+              بروزرسانی
             </button>
-          </form>
-        </section>
+          </div>
+
+          <div className="rounded-2xl border border-gray-800 bg-gray-950/60 backdrop-blur">
+            {loading ? (
+              <div className="p-6 text-sm text-gray-400">در حال بارگذاری…</div>
+            ) : tickets.length === 0 ? (
+              <div className="p-6 text-sm text-gray-400">هنوز تیکتی ثبت نکرده‌اید.</div>
+            ) : (
+              <ul className="divide-y divide-gray-800">
+                {tickets.map(t => (
+                  <li key={t.id}>
+                    <button
+                      onClick={() => setSelected(t)}
+                      className={"w-full text-right px-4 py-3 hover:bg-gray-900/50 flex items-center gap-3 " +
+                        (selected?.id === t.id ? "bg-gray-900/70" : "")}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{t.title}</span>
+                          <StatBadge status={t.status || "open"} />
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {CATS.find(c => c.v === t.category)?.t || t.category} •
+                          اولویت: {PRIOS.find(p => p.v === t.priority)?.t || t.priority}
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-gray-500 ltr">{new Date(t.created_at).toLocaleString()}</div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* جزئیات تیکت انتخاب‌شده + پاسخ ادمین */}
+        <div className="lg:col-span-3">
+          <div className="rounded-2xl border border-gray-800 bg-gray-950/60 backdrop-blur p-5">
+            {!selected ? (
+              <div className="text-gray-400 text-sm">از لیست سمت چپ یک تیکت انتخاب کنید.</div>
+            ) : (
+              <div className="space-y-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-lg font-bold">{selected.title}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {CATS.find(c => c.v === selected.category)?.t} • اولویت: {PRIOS.find(p => p.v === selected.priority)?.t}
+                    </div>
+                  </div>
+                  <StatBadge status={selected.status || "open"} />
+                </div>
+
+                <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4">
+                  <div className="text-xs text-gray-400 mb-1">پیام شما</div>
+                  <p className="leading-7">{selected.message}</p>
+                </div>
+
+                <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-400 mb-2">پاسخ ادمین</div>
+                    <span className="text-[11px] text-gray-500 ltr">
+                      {selected.updated_at ? new Date(selected.updated_at).toLocaleString() : ""}
+                    </span>
+                  </div>
+                  {selected.admin_reply ? (
+                    <p className="leading-7 text-emerald-200">{selected.admin_reply}</p>
+                  ) : (
+                    <p className="text-gray-500 text-sm">هنوز پاسخی ثبت نشده است.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* فرم ساخت تیکت جدید */}
+      <div className="rounded-2xl border border-gray-800 bg-gray-950/60 backdrop-blur p-5">
+        <h2 className="text-lg font-semibold mb-4">ایجاد تیکت جدید</h2>
+        {err && <div className="mb-3 text-sm text-red-400">{err}</div>}
+        <form onSubmit={submitTicket} className="space-y-4">
+          <input
+            className="w-full rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-500 px-3 py-2"
+            placeholder="عنوان تیکت"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <select
+              className="w-full rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-500 px-3 py-2"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              {CATS.map(c => <option key={c.v} value={c.v}>{c.t}</option>)}
+            </select>
+            <select
+              className="w-full rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-500 px-3 py-2"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            >
+              {PRIOS.map(p => <option key={p.v} value={p.v}>{p.t}</option>)}
+            </select>
+          </div>
+          <textarea
+            rows={5}
+            className="w-full rounded-lg bg-gray-900 border border-gray-800 focus:border-purple-500 px-3 py-2"
+            placeholder="متن پیام…"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-5 py-2 rounded-lg bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:opacity-90 disabled:opacity-60"
+          >
+            {submitting ? "در حال ارسال…" : "ثبت تیکت"}
+          </button>
+        </form>
       </div>
     </div>
   );
-}
-
-/* --- کمک‌تابع‌های نمایشی --- */
-function mapStatus(s) {
-  switch (s) {
-    case "open": return "باز";
-    case "answered": return "پاسخ داده شد";
-    case "closed": return "بسته";
-    default: return s || "نامشخص";
-  }
-}
-function mapCategory(c) {
-  switch (c) {
-    case "general": return "عمومی";
-    case "deposit": return "واریز";
-    case "withdraw": return "برداشت";
-    case "plan": return "پلن‌ها";
-    case "kyc": return "KYC";
-    case "other": return "سایر";
-    default: return c || "نامشخص";
-  }
-}
-function mapPriority(p) {
-  switch (p) {
-    case "low": return "کم";
-    case "normal": return "معمول";
-    case "high": return "زیاد";
-    case "urgent": return "فوری";
-    default: return p || "نامشخص";
-  }
 }
