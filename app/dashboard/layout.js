@@ -1,55 +1,93 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-function SidebarLink({ href, children }) {
-  const pathname = usePathname();
-  const active = pathname === href;
-  return (
-    <Link
-      href={href}
-      className={`block w-full text-center nv-btn ${active ? "nv-btn-primary" : ""}`}
-    >
-      {children}
-    </Link>
-  );
-}
-
 export default function DashboardLayout({ children }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.email) setEmail(data.user.email);
-    });
-  }, []);
+    let alive = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!alive) return;
+      if (!user) {
+        router.replace("/login");
+      } else {
+        setEmail(user.email || "");
+      }
+    })();
+    return () => { alive = false; };
+  }, [router]);
+
+  const links = [
+    { href: "/dashboard/profile", label: "پروفایل" },
+    { href: "/dashboard", label: "داشبورد" },
+    { href: "/dashboard/transactions", label: "تراکنش‌ها" },
+    { href: "/plans", label: "پلن‌ها" },
+    { href: "/dashboard/wallet", label: "واریز/برداشت" },
+    { href: "/dashboard/contest", label: "مسابقه" },
+    { href: "/dashboard/tickets", label: "تیکت‌ها / پشتیبانی" },
+  ];
+
+  const isActive = (href) =>
+    href === "/dashboard"
+      ? pathname === "/dashboard"
+      : pathname.startsWith(href);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    router.replace("/");
+  }
 
   return (
-    <div className="nv-container">
-      <div className="grid md:grid-cols-[260px_1fr] gap-4">
-        {/* Sidebar */}
-        <aside className="glass rounded-xl p-4 h-fit">
-          <div className="text-slate-200 font-extrabold text-lg mb-1">NovalInvest</div>
-          <div className="text-slate-400 text-sm mb-4">{email}</div>
+    <div className="nv-shell">
+      {/* Topbar */}
+      <div className="nv-topbar">
+        <div className="nv-top-left">
+          <Link href="/" className="nv-brand">
+            <span className="nv-emoji">🏠</span>
+            <span className="nv-title">NovalInvest</span>
+          </Link>
+          <Link href="/admin" className="nv-top-btn">ادمین</Link>
+          <Link href="/dashboard" className="nv-top-btn">داشبورد</Link>
+        </div>
+        <div className="nv-top-right">
+          <span className="nv-user">{email}</span>
+          <button className="nv-top-btn danger" onClick={signOut}>خروج</button>
+        </div>
+      </div>
 
-          <ul className="space-y-2">
-            <li><SidebarLink href="/dashboard">داشبورد</SidebarLink></li>
-            <li><SidebarLink href="/dashboard/transactions">تراکنش‌ها</SidebarLink></li>
-            <li><SidebarLink href="/plans">پلن‌ها</SidebarLink></li>
-            <li><SidebarLink href="/dashboard/wallet">واریز/برداشت</SidebarLink></li>
-            <li><SidebarLink href="/dashboard/support">پشتیبانی</SidebarLink></li>
-            <li><SidebarLink href="/dashboard/profile">پروفایل</SidebarLink></li>
-            <li><SidebarLink href="/logout">خروج</SidebarLink></li>
-          </ul>
+      {/* Body */}
+      <div className="nv-body">
+        {/* Sidebar */}
+        <aside className="nv-sidebar">
+          <div className="nv-side-card">
+            <div className="nv-side-brand">NovalInvest</div>
+            <div className="nv-side-email">{email}</div>
+          </div>
+
+          <nav className="nv-side-nav">
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`nv-side-link ${isActive(l.href) ? "active" : ""}`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+
+          <button className="nv-side-exit" onClick={signOut}>خروج</button>
         </aside>
 
-        {/* Content */}
-        <main className="min-h-[60vh]">
-          {children}
-        </main>
+        {/* Main content */}
+        <main className="nv-main">{children}</main>
       </div>
     </div>
   );
