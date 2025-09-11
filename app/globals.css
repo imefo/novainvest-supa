@@ -457,3 +457,82 @@ textarea.input { height:auto; padding:10px 12px; }
 
 .chat-send { display:grid; grid-template-columns: 1fr auto; gap:10px; margin-top:10px; }
 .row-gap { display:flex; gap:8px; flex-wrap:wrap; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* فونت‌ها */
+body {
+  @apply bg-gradient-to-br from-gray-900 via-gray-800 to-black text-gray-200 font-sans;
+}
+
+/* دکمه‌ها */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition duration-300;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md hover:from-purple-600 hover:to-indigo-700;
+}
+
+.btn-secondary {
+  @apply bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-md hover:from-pink-600 hover:to-red-600;
+}
+
+.btn-outline {
+  @apply border border-gray-500 text-gray-300 hover:bg-gray-700 hover:text-white;
+}
+
+/* کارت‌ها */
+.card {
+  @apply bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl shadow-lg p-5 transition-transform duration-300 hover:scale-[1.02];
+}
+
+/* اینپوت‌ها */
+.input {
+  @apply w-full px-4 py-2 rounded-lg border border-gray-600 bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500;
+}
+
+/* عنوان‌ها */
+h1, h2, h3, h4, h5, h6 {
+  @apply text-white font-bold;
+}
+
+/* لیست تیکت‌ها */
+.ticket-card {
+  @apply card mb-4;
+}
+
+.ticket-card h3 {
+  @apply text-lg text-purple-400;
+}
+
+.ticket-meta {
+  @apply text-sm text-gray-400 mb-2;
+}
+
+.ticket-message {
+  @apply bg-gray-700 rounded-lg p-3 text-gray-200;
+}
+
+.admin-reply {
+  @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg p-3 mt-3;
+}
+
+/* دکمه بازگشت */
+.back-btn {
+  @apply btn btn-outline mb-4;
+}
+
+/* جدول‌ها */
+.table {
+  @apply w-full text-left border-collapse;
+}
+
+.table th {
+  @apply bg-gray-800 text-gray-300 px-4 py-2;
+}
+
+.table td {
+  @apply border-t border-gray-700 px-4 py-2;
+}
