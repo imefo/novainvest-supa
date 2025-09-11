@@ -2,92 +2,104 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useState, useMemo } from "react";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!alive) return;
-      if (!user) {
-        router.replace("/login");
-      } else {
-        setEmail(user.email || "");
-      }
-    })();
-    return () => { alive = false; };
-  }, [router]);
+  // عنوان مسیر جاری (برای تاپ‌بار)
+  const pageTitle = useMemo(() => {
+    if (!pathname) return "داشبورد";
+    if (pathname.startsWith("/dashboard/wallet")) return "کیف پول";
+    if (pathname.startsWith("/dashboard/plans")) return "پلن‌ها";
+    if (pathname.startsWith("/dashboard/transactions")) return "تراکنش‌ها";
+    if (pathname.startsWith("/dashboard/support")) return "پشتیبانی";
+    if (pathname.startsWith("/dashboard/tickets")) return "تیکت‌ها";
+    if (pathname.startsWith("/dashboard/refer")) return "دعوت دوستان";
+    if (pathname.startsWith("/dashboard/settings")) return "تنظیمات";
+    return "داشبورد";
+  }, [pathname]);
 
-  const links = [
-    { href: "/dashboard/profile", label: "پروفایل" },
-    { href: "/dashboard", label: "داشبورد" },
+  const isActive = (href) => pathname === href || pathname.startsWith(href + "/");
+
+  // آیتم‌های منو (کناری)
+  const navItems = [
+    { href: "/dashboard", label: "نمای کلی" },
+    { href: "/dashboard/wallet", label: "کیف پول" },
+    { href: "/dashboard/plans", label: "پلن‌ها" },
     { href: "/dashboard/transactions", label: "تراکنش‌ها" },
-    { href: "/plans", label: "پلن‌ها" },
-    { href: "/dashboard/wallet", label: "واریز/برداشت" },
-    { href: "/dashboard/contest", label: "مسابقه" },
-    { href: "/dashboard/tickets", label: "تیکت‌ها / پشتیبانی" },
+    { href: "/dashboard/support", label: "پشتیبانی" },
+    { href: "/dashboard/tickets", label: "تیکت‌ها" },
+    { href: "/dashboard/refer", label: "دعوت دوستان" },
+    { href: "/dashboard/settings", label: "تنظیمات" },
   ];
-
-  const isActive = (href) =>
-    href === "/dashboard"
-      ? pathname === "/dashboard"
-      : pathname.startsWith(href);
-
-  async function signOut() {
-    await supabase.auth.signOut();
-    router.replace("/");
-  }
 
   return (
     <div className="nv-shell">
-      {/* Topbar */}
-      <div className="nv-topbar">
-        <div className="nv-top-left">
-          <Link href="/" className="nv-brand">
-            <span className="nv-emoji">🏠</span>
-            <span className="nv-title">NovalInvest</span>
-          </Link>
-          <Link href="/admin" className="nv-top-btn">ادمین</Link>
-          <Link href="/dashboard" className="nv-top-btn">داشبورد</Link>
+      {/* Sidebar */}
+      <aside
+        className="nv-sidebar"
+        style={{
+          display: open ? "block" : undefined, // برای موبایل: با دکمه باز/بسته می‌شود
+        }}
+      >
+        <div className="nv-logo">
+          <Link href="/"><span>🏠</span> NovaInvest</Link>
         </div>
-        <div className="nv-top-right">
-          <span className="nv-user">{email}</span>
-          <button className="nv-top-btn danger" onClick={signOut}>خروج</button>
-        </div>
-      </div>
 
-      {/* Body */}
-      <div className="nv-body">
-        {/* Sidebar */}
-        <aside className="nv-sidebar">
-          <div className="nv-side-card">
-            <div className="nv-side-brand">NovalInvest</div>
-            <div className="nv-side-email">{email}</div>
+        <nav className="nv-nav">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nv-link ${isActive(item.href) ? "active" : ""}`}
+              onClick={() => setOpen(false)}
+            >
+              <span>{item.label}</span>
+              {item.href === "/dashboard/tickets" && (
+                <span className="nv-badge">جدید</span>
+              )}
+            </Link>
+          ))}
+
+          <div className="nv-spacer" />
+
+          <Link href="/" className="nv-link" onClick={() => setOpen(false)}>
+            ← بازگشت به سایت
+          </Link>
+        </nav>
+      </aside>
+
+      {/* Content */}
+      <div style={{ display: "grid", gridTemplateRows: "auto 1fr" }}>
+        {/* Topbar */}
+        <div className="nv-topbar">
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              className="nv-btn"
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Toggle sidebar"
+              style={{ display: "inline-flex" }}
+            >
+              ☰
+            </button>
+            <button className="nv-btn" onClick={() => router.back()}>↶ بازگشت</button>
           </div>
 
-          <nav className="nv-side-nav">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`nv-side-link ${isActive(l.href) ? "active" : ""}`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+          <div style={{ fontWeight: 700 }}>{pageTitle}</div>
 
-          <button className="nv-side-exit" onClick={signOut}>خروج</button>
-        </aside>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Link href="/plans" className="nv-btn">پلن‌های عمومی</Link>
+            <Link href="/logout" className="nv-btn">خروج</Link>
+          </div>
+        </div>
 
-        {/* Main content */}
-        <main className="nv-main">{children}</main>
+        {/* Main */}
+        <main className="nv-main">
+          {children}
+        </main>
       </div>
     </div>
   );
