@@ -5,183 +5,206 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function SupportPage() {
-  const [loading, setLoading] = useState(true);
-  const [me, setMe] = useState(null);
+  const [user, setUser] = useState(null);
+
+  // فرم
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("general"); // general | deposit | withdraw | plan | kyc | other
+  const [priority, setPriority] = useState("normal");  // low | normal | high | urgent
+  const [message, setMessage] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
   const [tickets, setTickets] = useState([]);
-  const [form, setForm] = useState({
-    subject: "",
-    category: "general",
-    priority: "normal",
-    message: "",
-  });
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
+    let alive = true;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-      setMe(user);
-      await loadTickets(user.id);
-      setLoading(false);
+      setErr("");
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) { setErr(error.message); return; }
+      if (!alive) return;
+      setUser(user || null);
+      if (user?.id) await loadTickets(user.id);
     })();
+    return () => { alive = false; };
   }, []);
 
   async function loadTickets(uid) {
+    setErr("");
     const { data, error } = await supabase
       .from("tickets")
-      .select("id, subject, status, priority, category, created_at")
+      .select("id, title, category, priority, status, created_at")
       .eq("user_id", uid)
-      .order("created_at", { ascending: false });
-    if (!error) setTickets(data || []);
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) setErr(error.message);
+    else setTickets(data || []);
   }
 
-  async function createTicket(e) {
+  async function submitTicket(e) {
     e.preventDefault();
-    setError("");
-    if (!form.subject.trim() || !form.message.trim()) {
-      setError("موضوع و متن تیکت الزامی است.");
-      return;
-    }
-    setCreating(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setCreating(false); setError("ابتدا وارد شوید."); return; }
+    setErr(""); setOk("");
 
-    const { data: t, error: e1 } = await supabase
-      .from("tickets")
-      .insert({
-        user_id: user.id,
-        subject: form.subject.trim(),
-        category: form.category,
-        priority: form.priority,
-        status: "open",
-      })
-      .select("id")
-      .single();
+    // اعتبارسنجی حداقلی
+    if (!title.trim()) { setErr("موضوع را وارد کنید."); return; }
+    if (!message.trim()) { setErr("متن پیام را وارد کنید."); return; }
+    if (!user?.id) { setErr("لطفاً ابتدا وارد شوید."); return; }
 
-    if (e1) { setCreating(false); setError(e1.message); return; }
+    setSubmitting(true);
+    const payload = {
+      user_id: user.id,
+      title: title.trim(),
+      category,
+      priority,
+      message: message.trim(), // *** مهم: ستون message حتماً پاس داده می‌شود ***
+      status: "open",
+      created_at: new Date().toISOString(),
+    };
 
-    const { error: e2 } = await supabase
-      .from("ticket_messages")
-      .insert({
-        ticket_id: t.id,
-        user_id: user.id,
-        role: "user",
-        message: form.message.trim(),
-      });
+    const { error } = await supabase.from("tickets").insert([payload]);
+    setSubmitting(false);
 
-    setCreating(false);
-    if (e2) { setError(e2.message); return; }
+    if (error) { setErr(error.message); return; }
 
-    setForm({ subject: "", category: "general", priority: "normal", message: "" });
+    setOk("تیکت با موفقیت ثبت شد.");
+    setTitle(""); setMessage("");
     await loadTickets(user.id);
   }
 
-  if (loading) return <div className="nv-container"><div className="glass card-center">در حال بارگذاری…</div></div>;
-
   return (
     <div className="nv-container">
-      <div className="head-row">
-        <h1 className="title">پشتیبانی</h1>
-        <div className="muted">هر سوالی داری، تیکت بزن؛ سریع جواب می‌دیم.</div>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-extrabold">پشتیبانی</h1>
+        <Link href="/dashboard" className="nv-btn">بازگشت</Link>
       </div>
 
-      <div className="grid-2">
-        {/* Create box */}
-        <div className="glass card-pad">
-          <h3 className="card-title">ایجاد تیکت جدید</h3>
-          <form onSubmit={createTicket} className="form-grid">
-            <label className="form-col">
-              <span>موضوع</span>
-              <input
-                className="input"
-                value={form.subject}
-                onChange={e=>setForm(f=>({...f, subject:e.target.value}))}
-                placeholder="مثلاً مشکل برداشت"
-              />
-            </label>
+      {/* پیام‌های وضعیت */}
+      {err ? <div className="nv-alert nv-alert-error">{err}</div> : null}
+      {ok ? <div className="nv-alert nv-alert-ok">{ok}</div> : null}
 
-            <div className="form-row">
-              <label className="form-col">
-                <span>دسته‌بندی</span>
-                <select
-                  className="input"
-                  value={form.category}
-                  onChange={e=>setForm(f=>({...f, category:e.target.value}))}>
-                  <option value="general">عمومی</option>
-                  <option value="deposit">واریز</option>
-                  <option value="withdrawal">برداشت</option>
-                  <option value="kyc">احراز هویت</option>
-                  <option value="plans">پلن‌ها</option>
-                </select>
-              </label>
-              <label className="form-col">
-                <span>اولویت</span>
-                <select
-                  className="input"
-                  value={form.priority}
-                  onChange={e=>setForm(f=>({...f, priority:e.target.value}))}>
-                  <option value="low">کم</option>
-                  <option value="normal">معمولی</option>
-                  <option value="high">بالا</option>
-                </select>
-              </label>
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* لیست تیکت‌های من */}
+        <section className="nv-card md:col-span-1">
+          <div className="nv-card-title">تیکت‌های شما</div>
+          <div className="space-y-2">
+            {tickets.length === 0 && (
+              <div className="text-sm opacity-70">هنوز تیکتی ثبت نکردید.</div>
+            )}
+            {tickets.map(t => (
+              <Link
+                key={t.id}
+                href={`/dashboard/support/${t.id}`}
+                className="block nv-item hover:opacity-90"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-sm">{t.title}</div>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-white/10">
+                    {mapStatus(t.status)}
+                  </span>
+                </div>
+                <div className="text-xs opacity-70 mt-1">
+                  {mapCategory(t.category)} • {mapPriority(t.priority)}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* فرم ایجاد تیکت */}
+        <section className="nv-card md:col-span-2">
+          <div className="nv-card-title">ایجاد تیکت جدید</div>
+
+          <form onSubmit={submitTicket} className="space-y-4">
+            <div>
+              <label className="nv-label">موضوع</label>
+              <input
+                className="nv-input"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="مثلاً مشکل در برداشت"
+              />
             </div>
 
-            <label className="form-col">
-              <span>متن پیام</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="nv-label">دسته‌بندی</label>
+                <select
+                  className="nv-input"
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                >
+                  <option value="general">عمومی</option>
+                  <option value="deposit">واریز</option>
+                  <option value="withdraw">برداشت</option>
+                  <option value="plan">پلن‌ها</option>
+                  <option value="kyc">احراز هویت (KYC)</option>
+                  <option value="other">سایر</option>
+                </select>
+              </div>
+              <div>
+                <label className="nv-label">اولویت</label>
+                <select
+                  className="nv-input"
+                  value={priority}
+                  onChange={e => setPriority(e.target.value)}
+                >
+                  <option value="low">کم</option>
+                  <option value="normal">معمول</option>
+                  <option value="high">زیاد</option>
+                  <option value="urgent">فوری</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="nv-label">متن پیام</label>
               <textarea
-                className="input"
-                rows={5}
-                value={form.message}
-                onChange={e=>setForm(f=>({...f, message:e.target.value}))}
-                placeholder="با جزئیات بنویس تا سریع‌تر حل بشه" />
-            </label>
+                className="nv-textarea"
+                rows={6}
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                placeholder="توضیحات کامل مشکل/درخواست…"
+              />
+            </div>
 
-            {error && <div className="err">{error}</div>}
-
-            <button className="nv-btn nv-btn-primary" disabled={creating}>
-              {creating ? "در حال ثبت..." : "ثبت تیکت"}
+            <button disabled={submitting} className="nv-btn nv-btn-primary">
+              {submitting ? "در حال ثبت…" : "ثبت تیکت"}
             </button>
           </form>
-        </div>
-
-        {/* List box */}
-        <div className="glass card-pad">
-          <h3 className="card-title">تیکت‌های شما</h3>
-          {tickets.length === 0 ? (
-            <div className="muted">هنوز تیکتی ثبت نکردی.</div>
-          ) : (
-            <ul className="ticket-list">
-              {tickets.map(t => (
-                <li key={t.id} className="ticket-item">
-                  <div className="ti-left">
-                    <div className="ti-subj">{t.subject}</div>
-                    <div className="ti-meta">
-                      <span className={`chip chip-${t.status}`}>{faStatus(t.status)}</span>
-                      <span className="chip">{faPriority(t.priority)}</span>
-                      <span className="chip">{faCategory(t.category)}</span>
-                    </div>
-                  </div>
-                  <Link className="nv-btn" href={`/dashboard/tickets/${t.id}`}>مشاهده</Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        </section>
       </div>
     </div>
   );
 }
 
-function faStatus(s){ return s==="open"?"باز":s==="answered"?"پاسخ داده‌شده":s==="closed"?"بسته":"نامشخص"; }
-function faPriority(p){ return p==="high"?"بالا":p==="normal"?"معمولی":"کم"; }
-function faCategory(c){
-  switch(c){
+/* --- کمک‌تابع‌های نمایشی --- */
+function mapStatus(s) {
+  switch (s) {
+    case "open": return "باز";
+    case "answered": return "پاسخ داده شد";
+    case "closed": return "بسته";
+    default: return s || "نامشخص";
+  }
+}
+function mapCategory(c) {
+  switch (c) {
+    case "general": return "عمومی";
     case "deposit": return "واریز";
-    case "withdrawal": return "برداشت";
-    case "kyc": return "احراز هویت";
-    case "plans": return "پلن‌ها";
-    default: return "عمومی";
+    case "withdraw": return "برداشت";
+    case "plan": return "پلن‌ها";
+    case "kyc": return "KYC";
+    case "other": return "سایر";
+    default: return c || "نامشخص";
+  }
+}
+function mapPriority(p) {
+  switch (p) {
+    case "low": return "کم";
+    case "normal": return "معمول";
+    case "high": return "زیاد";
+    case "urgent": return "فوری";
+    default: return p || "نامشخص";
   }
 }
