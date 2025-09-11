@@ -1,70 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getSessionUser, isAdminFast } from "@/lib/role";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+
+function SidebarLink({ href, children }) {
+  const pathname = usePathname();
+  const active = pathname === href;
+  return (
+    <Link
+      href={href}
+      className={`block w-full text-center nv-btn ${active ? "nv-btn-primary" : ""}`}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export default function AdminLayout({ children }) {
-  const [state, setState] = useState({ checking: true, allowed: false });
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
-    let alive = true;
-    const guard = async () => {
-      // حداکثر 5 ثانیه صبر؛ بعد از اون هم از حالت لود خارج شو
-      const safety = setTimeout(() => {
-        if (alive) setState((s) => ({ ...s, checking: false }));
-      }, 5000);
-
-      const u = await getSessionUser();
-      if (!alive) return;
-
-      if (!u?.id) {
-        clearTimeout(safety);
-        // کاربر لاگین نیست
-        window.location.replace("/login?next=/admin");
-        return;
-      }
-      const ok = await isAdminFast(u.id);
-      if (!alive) return;
-
-      clearTimeout(safety);
-      if (ok) setState({ checking: false, allowed: true });
-      else {
-        // لاگین هست ولی ادمین نیست
-        window.location.replace("/dashboard");
-      }
-    };
-
-    guard();
-    return () => { alive = false; };
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.email) setEmail(data.user.email);
+    });
   }, []);
 
-  if (state.checking) {
-    return (
-      <main dir="rtl" className="nv-container" style={{ minHeight: "60vh", display: "grid", placeItems: "center" }}>
-        <div className="glass-card" style={{ padding: 16 }}>در حال بررسی دسترسی ادمین…</div>
-      </main>
-    );
-  }
-
-  if (!state.allowed) {
-    // اگر به هر دلیل ریدایرکت نشد، پیام می‌ده که کاربر گیر نکند
-    return (
-      <main dir="rtl" className="nv-container" style={{ minHeight: "60vh", display: "grid", placeItems: "center" }}>
-        <div className="glass-card" style={{ padding: 16 }}>
-          <div style={{ marginBottom: 8 }}>اجازهٔ دسترسی به بخش ادمین ندارید.</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Link href="/dashboard" className="nv-btn">داشبورد</Link>
-            <Link href="/" className="nv-btn">صفحهٔ اصلی</Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <div dir="rtl" className="nv-container">
-      {children}
+    <div className="nv-container">
+      <div className="grid md:grid-cols-[260px_1fr] gap-4">
+        {/* Sidebar */}
+        <aside className="glass rounded-xl p-4 h-fit">
+          <div className="text-slate-200 font-extrabold text-lg mb-1">مدیریت</div>
+          <div className="text-slate-400 text-sm mb-4">{email}</div>
+
+          <ul className="space-y-2">
+            <li><SidebarLink href="/admin">داشبورد ادمین</SidebarLink></li>
+            <li><SidebarLink href="/admin/users">کاربران</SidebarLink></li>
+            <li><SidebarLink href="/admin/plans">پلن‌ها</SidebarLink></li>
+            <li><SidebarLink href="/admin/transactions">تراکنش‌ها</SidebarLink></li>
+            <li><SidebarLink href="/admin/kyc">KYC</SidebarLink></li>
+            <li><SidebarLink href="/admin/deposit">واریزها</SidebarLink></li>
+            <li><SidebarLink href="/admin/tickets">تیکت‌ها</SidebarLink></li>
+            <li><SidebarLink href="/dashboard">رفتن به داشبورد کاربر</SidebarLink></li>
+          </ul>
+        </aside>
+
+        {/* Content */}
+        <main className="min-h-[60vh]">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

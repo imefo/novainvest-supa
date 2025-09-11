@@ -280,3 +280,26 @@ body {
 
 .page-title{margin:0 0 12px 0;font-size:22px}
 .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px}
+.card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px;}
+.input{width:100%;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);border-radius:10px;padding:10px;color:#e5e7eb;outline:none;}
+.input::placeholder{color:#94a3b8;}
+.list{display:grid;gap:10px;}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:right;}
+.row:hover{background:rgba(255,255,255,.08);}
+.badge{padding:4px 8px;border-radius:999px;background:rgba(124,58,237,.18);border:1px solid rgba(124,58,237,.35);font-size:12px;color:#e5e7eb;}
+.bubble{padding:10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+.input {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #e5e7eb;
+  width: 100%;
+  outline: none;
+}
+.input::placeholder { color: #9ca3af; }
+.glass {
+  background: rgba(10,13,24,.45);
+  backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(255,255,255,.08);
+}

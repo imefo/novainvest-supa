@@ -5,62 +5,52 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-const NAV = [
-  { href: "/dashboard/profile", label: "پروفایل" },
-  { href: "/dashboard", label: "داشبورد" },
-  { href: "/dashboard/transactions", label: "تراکنش‌ها" },
-  { href: "/dashboard/plans", label: "پلن‌ها" },
-  { href: "/dashboard/wallet", label: "واریز / برداشت" },
-];
-
-export default function Layout({ children }) {
+function SidebarLink({ href, children }) {
   const pathname = usePathname();
-  const [user, setUser] = useState(null);
+  const active = pathname === href;
+  return (
+    <Link
+      href={href}
+      className={`block w-full text-center nv-btn ${active ? "nv-btn-primary" : ""}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+export default function DashboardLayout({ children }) {
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (alive) setUser(data?.user ?? null);
-    })();
-    return () => { alive = false; };
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.email) setEmail(data.user.email);
+    });
   }, []);
 
   return (
-    <div className="dash-wrap">
-      <aside className="dash-sidebar">
-        <div className="dash-sidebar-inner">
-          <Link href="/" className="dash-brand">NovaInvest</Link>
+    <div className="nv-container">
+      <div className="grid md:grid-cols-[260px_1fr] gap-4">
+        {/* Sidebar */}
+        <aside className="glass rounded-xl p-4 h-fit">
+          <div className="text-slate-200 font-extrabold text-lg mb-1">NovalInvest</div>
+          <div className="text-slate-400 text-sm mb-4">{email}</div>
 
-          <nav className="dash-nav">
-            {NAV.map((it) => {
-              const active = pathname === it.href;
-              return (
-                <Link key={it.href} href={it.href}
-                      className={`dash-nav-link ${active ? "active" : ""}`}>
-                  {it.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <ul className="space-y-2">
+            <li><SidebarLink href="/dashboard">داشبورد</SidebarLink></li>
+            <li><SidebarLink href="/dashboard/transactions">تراکنش‌ها</SidebarLink></li>
+            <li><SidebarLink href="/plans">پلن‌ها</SidebarLink></li>
+            <li><SidebarLink href="/dashboard/wallet">واریز/برداشت</SidebarLink></li>
+            <li><SidebarLink href="/dashboard/support">پشتیبانی</SidebarLink></li>
+            <li><SidebarLink href="/dashboard/profile">پروفایل</SidebarLink></li>
+            <li><SidebarLink href="/logout">خروج</SidebarLink></li>
+          </ul>
+        </aside>
 
-          <div className="dash-user-box">
-            {user ? (
-              <>
-                <div className="dash-user-email">{user.email}</div>
-                <button className="nv-btn" onClick={async () => {
-                  await supabase.auth.signOut();
-                  window.location.href = "/";
-                }}>خروج</button>
-              </>
-            ) : (
-              <Link href="/login" className="nv-btn nv-btn-primary">ورود / ثبت‌نام</Link>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      <main className="dash-main"><div className="nv-container">{children}</div></main>
+        {/* Content */}
+        <main className="min-h-[60vh]">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
