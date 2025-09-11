@@ -596,3 +596,50 @@ h1, h2, h3, h4, h5, h6 {
   margin-top:auto;font-weight:800;opacity:.95;
   border-top:1px dashed rgba(255,255,255,.12);padding-top:10px;
 }
+/* === Referral (Invite) === */
+.ref-wrap { display: grid; gap: 16px; }
+.ref-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.ref-title { margin: 0; font-size: clamp(22px,3.6vw,28px); }
+.ref-sub { margin: 4px 0 0; color: var(--muted,#94a3b8); }
+
+.ref-card {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 16px; padding: 16px;
+  backdrop-filter: blur(8px) saturate(140%);
+}
+.ref-card__title { font-weight: 700; margin-bottom: 10px; }
+
+.ref-input-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.ref-input {
+  height: 44px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.08);
+  color: #e5e7eb; padding: 0 12px; outline: none;
+}
+.ref-hint { margin-top: 8px; font-size: 12px; color: var(--muted,#94a3b8); }
+
+.ref-kpis { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+.ref-kpi { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 14px; }
+.ref-kpi__label { color: var(--muted,#94a3b8); font-size: 12px; margin-bottom: 6px; }
+.ref-kpi__value { font-size: 22px; font-weight: 800; letter-spacing: .2px; }
+
+.ref-table { display: grid; gap: 6px; margin-top: 8px; }
+.ref-tr { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px; padding: 10px 12px;
+}
+.ref-th { background: transparent; border: none; padding: 0 4px; color: #cbd5e1; font-weight: 700; }
+.ref-empty { color: var(--muted,#94a3b8); padding: 6px 2px; }
+.ref-note { margin-top: 10px; font-size: 12px; color: var(--muted,#94a3b8); }
+
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.muted { color: var(--muted,#94a3b8); }
+
+/* دکمه عمومی (همخوان با تم فعلی) */
+.nv-btn {
+  padding: 10px 14px; border-radius: 10px;
+  background: linear-gradient(135deg, #7c3aed, #3b82f6);
+  border: none; color: #fff; cursor: pointer;
+}
+.nv-btn:hover { opacity: .95; }
