@@ -140,4 +140,4 @@ function Metric({ title, value, suffix = "", gradient = "g1", actions, loading }
       {actions && <div className="m-actions">{actions}</div>}
     </div>
   );
-}
+} 
