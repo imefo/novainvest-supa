@@ -1,143 +1,170 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import ReferralCard from "@/components/ReferralCard";
-import WalletCard from "@/components/walletCard";
 
-export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
-  const [wallet, setWallet] = useState(0);
-  const [profit30d, setProfit30d] = useState(0);
-  const [invested, setInvested] = useState(0);
+export default function DashboardHome() {
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({
+    balanceUSDT: 0,
+    profit30d: 0,
+    activeInvests: 0,
+    pendingTx: 0,
+    ticketsOpen: 0,
+    hasWallet: false,
+  });
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        setErr("");
-        setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user || !alive) return;
+        setUser(user);
 
-        // کیف‌پول
-        const { data: bal } = await supabase
-          .from("user_balances")
-          .select("amount")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (!alive) return;
-        setWallet(bal?.amount ?? 0);
+        const countOf = async (table, filter = (q) => q) => {
+          const { count } = await filter(
+            supabase.from(table).select("*", { count: "exact", head: true })
+          );
+          return count || 0;
+        };
 
-        // سرمایه‌گذاری‌های فعال
-        const { data: ups } = await supabase
-          .from("user_plans")
-          .select("amount,status")
-          .eq("user_id", user.id)
-          .eq("status", "active");
-        const investedSum = (ups ?? []).reduce((s, r) => s + (r.amount || 0), 0);
-        if (!alive) return;
-        setInvested(investedSum);
+        // بالانس USDT
+        let balanceUSDT = 0;
+        try {
+          const { data } = await supabase
+            .from("user_balances")
+            .select("amount")
+            .eq("user_id", user.id)
+            .eq("currency", "USDT")
+            .maybeSingle();
+          balanceUSDT = data?.amount || 0;
+        } catch {}
+
+        // ولت ثبت شده؟
+        let hasWallet = false;
+        try {
+          const { data } = await supabase
+            .from("profiles")
+            .select("usdt_wallet_addr")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          hasWallet = !!data?.usdt_wallet_addr;
+        } catch {}
+
+        const [activeInvests, pendingTx, ticketsOpen] = await Promise.all([
+          countOf("user_plans", (q) => q.eq("user_id", user.id).eq("is_active", true)),
+          countOf("transactions", (q) => q.eq("user_id", user.id).eq("status", "pending")),
+          countOf("tickets", (q) => q.eq("user_id", user.id).eq("status", "open")),
+        ]);
 
         // سود ۳۰ روز اخیر
-        const since = new Date(Date.now() - 30 * 86400000).toISOString();
-        const { data: txs } = await supabase
-          .from("transactions")
-          .select("amount,type,created_at")
-          .eq("user_id", user.id)
-          .eq("type", "profit")
-          .gte("created_at", since);
-        const p = (txs ?? []).reduce((s, r) => s + (r.amount || 0), 0);
+        let profit30d = 0;
+        try {
+          const { data } = await supabase
+            .from("ledger")
+            .select("amount, type, created_at")
+            .eq("user_id", user.id)
+            .gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString());
+          profit30d =
+            (data || [])
+              .filter((x) => x.type === "profit")
+              .reduce((sum, x) => sum + (Number(x.amount) || 0), 0) || 0;
+        } catch {}
+
         if (!alive) return;
-        setProfit30d(p);
-      } catch (e) {
-        console.error(e);
-        if (alive) setErr("مشکلی پیش آمد. لطفاً دوباره تلاش کنید.");
-      } finally {
-        if (alive) setLoading(false);
-      }
+        setStats({ balanceUSDT, profit30d, activeInvests, pendingTx, ticketsOpen, hasWallet });
+      } catch {}
     })();
-    return () => (alive = false);
+    return () => { alive = false; };
   }, []);
 
+  const cards = [
+    {
+      title: "موجودی کیف‌پول",
+      desc: "موجودی لحظه‌ای شما (USDT)",
+      count: stats.balanceUSDT.toFixed(2),
+      href: "/dashboard/wallet",
+      icon: "💎",
+      accent: "var(--acc5)",
+    },
+    {
+      title: "واریز / برداشت",
+      desc: "شارژ یا برداشت موجودی",
+      count: stats.pendingTx,
+      hint: "در انتظار",
+      href: "/dashboard/wallet",
+      icon: "💳",
+      accent: "var(--acc3)",
+    },
+    {
+      title: "سود ۳۰ روز اخیر",
+      desc: "با بازتوزیع خودکار",
+      count: stats.profit30d.toFixed(2),
+      href: "/dashboard/transactions",
+      icon: "📈",
+      accent: "var(--acc2)",
+    },
+    {
+      title: "سرمایه‌گذاری‌های فعال",
+      desc: "وضعیت پلن‌ها و سودآوری",
+      count: stats.activeInvests,
+      href: "/plans",
+      icon: "📦",
+      accent: "var(--acc4)",
+    },
+    {
+      title: "لینک دعوت",
+      desc: "با هر دعوت موفق 0.50 USDT پاداش بگیر",
+      count: "→",
+      href: "/dashboard/referral",
+      icon: "🎁",
+      accent: "var(--acc7)",
+    },
+    {
+      title: "تیکت‌های پشتیبانی",
+      desc: "ایجاد تیکت و دیدن پاسخ‌ها",
+      count: stats.ticketsOpen,
+      hint: "باز",
+      href: "/dashboard/support",
+      icon: "🎧",
+      accent: "var(--acc6)",
+    },
+    {
+      title: "تنظیم کیف‌پول",
+      desc: stats.hasWallet ? "آدرس ثبت شده است" : "ثبت آدرس USDT (TRC20)",
+      count: stats.hasWallet ? "✓" : "✎",
+      href: "/dashboard/wallet",
+      icon: "🔐",
+      accent: "var(--acc1)",
+    },
+    {
+      title: "پروفایل",
+      desc: "نام، ایمیل، KYC و تنظیمات",
+      count: "→",
+      href: "/dashboard/profile",
+      icon: "⚙️",
+      accent: "var(--acc8)",
+    },
+  ];
+
   return (
-    <div className="lux-stack">
-      {/* Hero */}
-      <section className="lux-hero">
-        <div className="title">داشبورد</div>
-        <div className="sub">وضعیت کلی حساب، کیف‌پول و سرمایه‌گذاری‌ها</div>
-        <div className="actions">
-          <Link className="lux-chip" href="/plans">خرید پلن</Link>
-          <Link className="lux-chip" href="/dashboard/transactions">تراکنش‌ها</Link>
-        </div>
-      </section>
-
-      {/* خطا */}
-      {err && <div className="lux-alert">{err}</div>}
-
-      {/* متریک‌ها */}
-      <section className="lux-metrics">
-        <Metric
-          title="موجودی کیف‌پول (USDT)"
-          value={wallet}
-          gradient="g1"
-          actions={
-            <div className="metric-actions">
-              <Link className="lux-btn sm" href="/deposit">واریز</Link>
-              <Link className="lux-btn sm" href="/withdraw">برداشت</Link>
+    <div className="admin-grid">
+      {cards.map((c, i) => (
+        <Link href={c.href} key={i} className="admin-card" style={{ ['--ring']: c.accent }}>
+          <div className="admin-card__icon" aria-hidden>{c.icon}</div>
+          <div className="admin-card__head">
+            <h3>{c.title}</h3>
+            <div className="admin-chip">
+              <span>{c.count}</span>
+              {c.hint ? <small>{c.hint}</small> : null}
             </div>
-          }
-          loading={loading}
-        />
-        <Metric
-          title="سود ۳۰ روز اخیر"
-          value={profit30d}
-          suffix="USDT"
-          gradient="g2"
-          loading={loading}
-        />
-        <Metric
-          title="سرمایه‌گذاری‌های فعال"
-          value={invested}
-          suffix="USDT"
-          gradient="g3"
-          actions={<Link className="lux-btn sm" href="/plans">مشاهده پلن‌ها</Link>}
-          loading={loading}
-        />
-      </section>
-
-      {/* کیف‌پول + دعوت */}
-      <section className="lux-two">
-        <WalletCard />
-        <ReferralCard />
-      </section>
-
-      {/* CTA پایین صفحه */}
-      <section className="lux-cta">
-        <div className="text">
-          آماده‌ای درآمدت رو شروع کنی؟ پلن مناسب رو انتخاب کن.
-        </div>
-        <Link className="lux-btn xl primary" href="/plans">شروع سرمایه‌گذاری</Link>
-      </section>
+          </div>
+          <p className="admin-card__desc">{c.desc}</p>
+          <div className="admin-card__cta">برو به {c.title} ↗️</div>
+        </Link>
+      ))}
     </div>
   );
 }
-
-function Metric({ title, value, suffix = "", gradient = "g1", actions, loading }) {
-  return (
-    <div className={`lux-metric ${gradient}`}>
-      <div className="m-title">{title}</div>
-      <div className="m-value">
-        {loading ? <span className="skeleton" /> : (
-          <>
-            {Number(value || 0).toFixed(2)}{" "}
-            <span className="suffix">{suffix}</span>
-          </>
-        )}
-      </div>
-      {actions && <div className="m-actions">{actions}</div>}
-    </div>
-  );
-} 
