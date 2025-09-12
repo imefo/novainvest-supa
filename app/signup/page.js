@@ -120,7 +120,6 @@ function SignupFormInner() {
           {err}
         </div>
       )}
-
       <button
         type="submit"
         disabled={loading}
