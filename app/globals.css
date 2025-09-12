@@ -705,3 +705,32 @@ h1, h2, h3, h4, h5, h6 {
   .tr { grid-template-columns: 1fr 1fr; }
   .tr .td:nth-child(3) { grid-column: 1 / -1; }
 }
+/* Signup / Login Glass */
+.auth-wrap{
+  min-height:calc(100vh - 80px);
+  display:grid; grid-template-columns:1.2fr .8fr; gap:20px;
+  align-items:center; padding:32px 16px; position:relative;
+}
+.auth-card,.auth-side{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px; padding:22px; backdrop-filter: blur(10px) saturate(140%);
+}
+.auth-head h1{margin:8px 0 6px 0; font-size:clamp(22px,3.5vw,30px);}
+.auth-badge{display:inline-block; padding:6px 10px; border:1px solid rgba(255,255,255,.16); border-radius:999px; font-size:12px; color:#e5e7eb;}
+.auth-form{display:grid; gap:12px; margin-top:10px;}
+.form-row{display:grid; gap:6px;}
+.form-row input{
+  height:44px; border-radius:12px; border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.28); color:#fff; padding:0 12px; outline:none;
+}
+.check{display:flex; gap:8px; align-items:center; margin-top:4px; color:#cbd5e1;}
+.auth-msg{margin-top:6px; background:rgba(250,204,21,.15); border:1px solid rgba(250,204,21,.35); color:#fde68a; padding:8px 10px; border-radius:10px; font-size:13px;}
+.auth-footer{display:flex; gap:10px; justify-content:space-between; margin-top:8px;}
+.auth-side-hero .chip{display:inline-block; padding:6px 10px; border:1px solid rgba(255,255,255,.16); border-radius:999px; font-size:12px; color:#e5e7eb;}
+.auth-side-hero h3{margin:10px 0 6px; font-size:clamp(18px,3vw,24px);}
+.bullets{margin:10px 0 0; padding:0 18px;}
+@media (max-width:900px){
+  .auth-wrap{grid-template-columns:1fr; padding-top:24px;}
+  .auth-side{display:none;}
+}
