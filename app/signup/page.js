@@ -1,247 +1,118 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SignupPage() {
   const router = useRouter();
+  const params = useSearchParams();
+  const refParam = params.get("ref") || "";
 
-  // فرم
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-
-  // ریفرال
-  const [refCode, setRefCode] = useState(null);
-
-  // وضعیت
+  const [refCode, setRefCode] = useState(refParam);
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState(null);
-  const [ok, setOk] = useState(null);
+  const [msg, setMsg] = useState(null);
 
-  // ref را از URL بخوان (بدون useSearchParams تا در بیلد گیر نده)
+  // اگر از لینک دعوت اومده بود، فیلد رو پر کن
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const ref = params.get("ref");
-      if (ref) setRefCode(ref.trim());
-    } catch {}
-  }, []);
+    if (refParam) setRefCode(refParam);
+  }, [refParam]);
+
+  // +0.5 USDT به موجودی referrer اضافه می‌کند (ایمن به‌صورت select+update)
+  const awardReferralBonus = async (referrerId) => {
+    const { data: bal } = await supabase
+      .from("user_balances")
+      .select("amount")
+      .eq("user_id", referrerId)
+      .eq("currency", "USDT")
+      .maybeSingle();
+
+    const current = Number(bal?.amount || 0);
+    const next = current + 0.5;
+
+    // upsert یا update
+    if (bal) {
+      await supabase
+        .from("user_balances")
+        .update({ amount: next })
+        .eq("user_id", referrerId)
+        .eq("currency", "USDT");
+    } else {
+      await supabase
+        .from("user_balances")
+        .upsert({ user_id: referrerId, currency: "USDT", amount: next });
+    }
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setErr(null);
-    setOk(null);
     setLoading(true);
+    setMsg(null);
     try {
-      // 1) ثبت نام
-      const { data: sign, error: e1 } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+
+      const user = data?.user;
+      if (!user) throw new Error("ثبت‌نام انجام نشد. لطفاً دوباره تلاش کنید.");
+
+      // ساخت کد یکتا از user.id
+      const myCode = user.id.slice(0, 8);
+
+      // ثبت پروفایل خود کاربر
+      await supabase.from("profiles").upsert({
+        user_id: user.id,
         email,
-        password,
-        options: { data: { full_name: fullName || null } },
-      });
-      if (e1) throw e1;
+        referral_code: myCode,
+      }, { onConflict: "user_id" });
 
-      // ممکنه ایمیل‌وریفای لازم باشه – ولی ما ادامه می‌دیم و اگر کاربر لاگین شد، ریفرال را ثبت می‌کنیم
-      const { data: ures } = await supabase.auth.getUser();
-      const newUser = ures?.user || null;
-
-      // 2) اگر refCode داریم و کاربر لاگین شد → ریفرال + جایزه ۰.۵ USDT
-      if (newUser && refCode) {
-        // 2-1) پیدا کردن صاحب کد معرف
-        const { data: ownerRow, error: e2 } = await supabase
-          .from("referral_codes")                // ← اگر اسم جدول‌تان فرق دارد، اینجا را عوض کنید
+      // اگر refCode وارد شده بود، دعوت را ثبت و پاداش بده
+      if (refCode) {
+        const { data: referrer } = await supabase
+          .from("profiles")
           .select("user_id")
-          .eq("code", refCode)
+          .eq("referral_code", refCode)
           .maybeSingle();
-        if (e2) throw e2;
 
-        if (ownerRow?.user_id && ownerRow.user_id !== newUser.id) {
-          const inviterId = ownerRow.user_id;
+        if (referrer?.user_id) {
+          // ثبت دعوت (unique روی invitee_id از دوباره‌نویسی جلوگیری می‌کند)
+          await supabase.from("referrals").insert({
+            referrer_id: referrer.user_id,
+            invitee_id: user.id,
+          }).catch(() => { /* اگر قبلاً ثبت شده بود */ });
 
-          // 2-2) ثبت ردیف در referrals
-          const { error: e3 } = await supabase.from("referrals").insert({
-            referrer_id: inviterId,
-            invitee_id: newUser.id,
-            referral_code: refCode,
-          });
-          if (e3) {
-            // اگر محدودیت یکتا دارید و قبلاً ثبت شده بود، از خطا رد شویم
-            if (String(e3.message || "").toLowerCase().includes("duplicate")) {
-              // ignore
-            } else {
-              console.warn("referrals insert error:", e3);
-            }
-          }
-
-          // 2-3) افزایش موجودی inviter به میزان 0.5 USDT
-          // تلاش برای آپدیت؛ اگر نبود، اینسرت
-          const { data: balRow, error: balErr } = await supabase
-            .from("user_balances")               // ← اگر اسم جدول متفاوت است، عوض کنید
-            .select("amount")
-            .eq("user_id", inviterId)
-            .eq("currency", "USDT")
-            .maybeSingle();
-
-          if (!balErr) {
-            if (balRow) {
-              // آپدیت
-              const { error: updErr } = await supabase
-                .from("user_balances")
-                .update({ amount: Number(balRow.amount || 0) + 0.5 })
-                .eq("user_id", inviterId)
-                .eq("currency", "USDT");
-              if (updErr) console.warn("balance update error:", updErr);
-            } else {
-              // اینسرت
-              const { error: insErr } = await supabase.from("user_balances").insert({
-                user_id: inviterId,
-                currency: "USDT",
-                amount: 0.5,
-              });
-              if (insErr) console.warn("balance insert error:", insErr);
-            }
-          }
+          // پاداش
+          await awardReferralBonus(referrer.user_id);
         }
       }
 
-      setOk("ثبت‌نام انجام شد. در حال انتقال به داشبورد…");
-      router.push("/dashboard");
-    } catch (e) {
-      setErr(e?.message || "خطای ناشناخته");
+      setMsg("ثبت‌نام موفق! لطفاً ایمیل خود را تایید کنید.");
+      router.replace("/login");
+    } catch (err) {
+      setMsg(err.message || "خطا در ثبت‌نام");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="nv-container" style={{ minHeight: "70vh", display: "grid", placeItems: "center" }}>
-      <div
-        className="glass-card"
-        style={{
-          width: "100%",
-          maxWidth: 460,
-          padding: 24,
-          borderRadius: 16,
-          border: "1px solid rgba(255,255,255,.12)",
-          background: "rgba(16,18,30,.55)",
-          backdropFilter: "blur(10px) saturate(140%)",
-          boxShadow: "0 10px 30px rgba(0,0,0,.25)",
-          direction: "rtl",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <Link href="/" className="nv-brand-link" style={{ gap: 8, alignItems: "center", textDecoration: "none" }}>
-            <span aria-hidden>🏠</span>
-            <strong className="nv-brand-title" style={{ color: "#E5E7EB" }}>NovaInvest</strong>
-          </Link>
-          <div className="chip">{refCode ? `کد معرف: ${refCode}` : "ثبت‌نام"}</div>
-        </div>
+    <div className="nv-container" style={{ maxWidth: 520 }}>
+      <h2 style={{ marginBottom: 12 }}>ثبت‌نام</h2>
+      <p className="muted" style={{ marginBottom: 16 }}>
+        اگر کد معرف دارید وارد کنید تا دعوت‌کننده شما 0.50 USDT پاداش بگیرد.
+      </p>
 
-        <h2 style={{ margin: 0, fontSize: 22, lineHeight: 1.4 }}>ساخت حساب کاربری</h2>
-        <p className="muted" style={{ marginTop: 6, marginBottom: 18 }}>
-          ایمیل و رمز عبور خود را وارد کنید.
-        </p>
+      {msg && <div className="notice">{msg}</div>}
 
-        {err ? (
-          <div
-            style={{
-              background: "rgba(244,63,94,.12)",
-              border: "1px solid rgba(244,63,94,.35)",
-              color: "#fecaca",
-              padding: "8px 10px",
-              borderRadius: 10,
-              marginBottom: 12,
-              fontSize: 14,
-            }}
-          >
-            {err}
-          </div>
-        ) : null}
-
-        {ok ? (
-          <div
-            style={{
-              background: "rgba(34,197,94,.12)",
-              border: "1px solid rgba(34,197,94,.35)",
-              color: "#bbf7d0",
-              padding: "8px 10px",
-              borderRadius: 10,
-              marginBottom: 12,
-              fontSize: 14,
-            }}
-          >
-            {ok}
-          </div>
-        ) : null}
-
-        <form onSubmit={handleSignup} style={{ display: "grid", gap: 12 }}>
-          <div>
-            <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#cbd5e1" }}>نام و نام‌خانوادگی (اختیاری)</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="مثلاً علی رضایی"
-              className="nv-input"
-              style={inputStyle}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#cbd5e1" }}>ایمیل</label>
-            <input
-              required
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="nv-input"
-              style={inputStyle}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#cbd5e1" }}>رمز عبور</label>
-            <input
-              required
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="حداقل ۶ کاراکتر"
-              className="nv-input"
-              style={inputStyle}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="nv-btn nv-btn-primary"
-            disabled={loading}
-            style={{ height: 44 }}
-          >
-            {loading ? "درحال ساخت حساب…" : "ثبت‌نام"}
-          </button>
-        </form>
-
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, fontSize: 14 }}>
-          <Link href="/login" className="nv-link">ورود</Link>
-          <Link href="/forgot" className="nv-link">فراموشی رمز</Link>
-        </div>
-      </div>
+      <form onSubmit={handleSignup} className="card" style={{ display: "grid", gap: 10 }}>
+        <input type="email" placeholder="ایمیل" value={email} onChange={(e)=>setEmail(e.target.value)} required />
+        <input type="password" placeholder="رمز عبور" value={password} onChange={(e)=>setPassword(e.target.value)} required />
+        <input type="text" placeholder="کد معرف (اختیاری)" value={refCode} onChange={(e)=>setRefCode(e.target.value)} />
+        <button className="btn btn-primary" disabled={loading}>
+          {loading ? "در حال ثبت…" : "ثبت‌نام"}
+        </button>
+      </form>
     </div>
   );
 }
-
-const inputStyle = {
-  width: "100%",
-  height: 44,
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,.18)",
-  background: "rgba(255,255,255,.06)",
-  color: "#e5e7eb",
-  outline: "none",
-  padding: "0 12px",
-};
