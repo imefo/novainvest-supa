@@ -4,7 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-// — ذخیره ref در کوکی (داخل Suspense رندر می‌شود)
+// جلوگیری از پری‌رنڈر مشکل‌دار
+export const dynamic = "force-dynamic";
+export const revalidate = 0; // ← فقط یک عدد، بدون import همنام
+
 function RefCapture() {
   const search = useSearchParams();
   useEffect(() => {
@@ -15,10 +18,6 @@ function RefCapture() {
   }, [search]);
   return null;
 }
-
-// جلوگیری از prerender خطادار
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export default function SignupPage() {
   const router = useRouter();
@@ -31,16 +30,13 @@ export default function SignupPage() {
     setErr("");
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
-        options: {
-          data: { full_name: form.name.trim() || null },
-        },
+        options: { data: { full_name: form.name.trim() || null } },
       });
       if (error) throw error;
-      // بعد از ثبت‌نام کاربر را به داشبورد یا ورود ببر
-      router.replace("/login"); // اگر ایمیل تاییدی دارید می‌توانید به /login یا /dashboard ببرید
+      router.replace("/login");
     } catch (e) {
       setErr(e?.message || "خطایی رخ داد");
     } finally {
@@ -50,7 +46,6 @@ export default function SignupPage() {
 
   return (
     <div className="page-wrap">
-      {/* این قسمت، شرطِ Next.js را برآورده می‌کند */}
       <Suspense fallback={null}>
         <RefCapture />
       </Suspense>
@@ -69,7 +64,6 @@ export default function SignupPage() {
             value={form.name}
             onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
           />
-
           <label>ایمیل</label>
           <input
             type="email"
@@ -78,7 +72,6 @@ export default function SignupPage() {
             onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
             required
           />
-
           <label>رمز عبور</label>
           <input
             type="password"
@@ -99,65 +92,28 @@ export default function SignupPage() {
       </div>
 
       <style jsx>{`
-        .page-wrap {
-          min-height: 70vh;
-          display: grid;
-          place-items: center;
-          padding: 2rem 1rem;
-        }
+        .page-wrap { min-height:70vh; display:grid; place-items:center; padding:2rem 1rem; }
         .auth-card {
-          width: 100%;
-          max-width: 520px;
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 18px;
-          padding: 24px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
-          backdrop-filter: blur(8px);
+          width:100%; max-width:520px; background:rgba(255,255,255,.02);
+          border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:24px;
+          box-shadow:0 10px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.04);
+          backdrop-filter:blur(8px);
         }
-        .auth-title {
-          margin: 0 0 6px;
-          font-size: 1.6rem;
-        }
-        .auth-sub {
-          opacity: .8;
-          margin: 0 0 18px;
-        }
-        .form-v {
-          display: grid;
-          gap: 10px;
-        }
+        .auth-title { margin:0 0 6px; font-size:1.6rem; }
+        .auth-sub { opacity:.8; margin:0 0 18px; }
+        .form-v { display:grid; gap:10px; }
         input {
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 10px;
-          padding: 10px 12px;
-          color: inherit;
-          outline: none;
+          background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+          border-radius:10px; padding:10px 12px; color:inherit; outline:none;
         }
         .btn-primary {
-          margin-top: 8px;
-          padding: 10px 14px;
-          border-radius: 12px;
-          border: 0;
-          cursor: pointer;
-          background: linear-gradient(135deg, #7c4dff, #00e5ff);
-          color: #fff;
-          font-weight: 600;
+          margin-top:8px; padding:10px 14px; border-radius:12px; border:0; cursor:pointer;
+          background:linear-gradient(135deg,#7c4dff,#00e5ff); color:#fff; font-weight:600;
         }
-        .auth-foot {
-          margin-top: 14px;
-          text-align: center;
-          opacity: .9;
-        }
+        .auth-foot { margin-top:14px; text-align:center; opacity:.9; }
         .alert.error {
-          background: rgba(255, 77, 77, 0.08);
-          border: 1px solid rgba(255, 77, 77, 0.35);
-          color: #ff6b6b;
-          padding: 8px 10px;
-          border-radius: 10px;
-          margin-bottom: 10px;
-          font-size: .9rem;
+          background:rgba(255,77,77,.08); border:1px solid rgba(255,77,77,.35);
+          color:#ff6b6b; padding:8px 10px; border-radius:10px; margin-bottom:10px; font-size:.9rem;
         }
       `}</style>
     </div>
